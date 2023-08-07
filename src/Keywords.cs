@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using static System.Console;
 using System.Collections;
 using System.Collections.Generic;
@@ -169,7 +169,7 @@ class Keywords : DickLang.Compiler {
 
                     // check and assign args
                     string[] Tokens = new string[]{"call", parameters[0] as string, parameters[1] as string };
-                    object ArgsList = CheckCallParams(FunctionArgs, parameters[1] as string, Tokens);
+                    object ArgsList = CheckCallParams(FunctionArgs, Convert.ToString(parameters[1]), Tokens);
                     if (parameters.Length == 2 && ArgsList==null)
                         return null;
                     for(int i=0; i<FunctionArgs.Keys.Count();i++) {
@@ -179,7 +179,8 @@ class Keywords : DickLang.Compiler {
 
                         object value;
                         if (type.Contains("[]")) {
-                            value = Lexer.EvalExpr($"~[{_[i]}]~", Tokens, true, Convert.ToString(type).Replace("[]", ""));
+                            value = Lexer.EvalExpr(type.Contains("string") ? $"{_[i]}" : $"~[{_[i]}]~", 
+                                Tokens, type.Contains("string"), Convert.ToString(type).Replace("[]", ""));
                             value = Parser.SetArrayElems(new string[]{type, "nig", Convert.ToString(value)});
                         }
                         else
@@ -253,10 +254,7 @@ class Keywords : DickLang.Compiler {
     private static object CheckCallParams(Dictionary<string, object> StoredArgs, string FuncArgs, string[] Tokens) {
         List<string> ArgsList = new();
         List<string> ValuesList = new();
-
-        if (ArgsList.Count() == 0)
-                return FuncArgs==null ? Array.Empty<object>() : 
-                Error.RunTimeError("Syntax", $"Function {Tokens[1]} expects {ArgsList.Count()} arguments, {Parser.SplitArgs(FuncArgs).Length} supplied");
+        
         string[] RawArgs = Parser.SplitArgs(FuncArgs);
 
         foreach (var key in StoredArgs)
@@ -265,7 +263,8 @@ class Keywords : DickLang.Compiler {
             var argtype = (StoredArgs[StoredArgs.Keys.ToArray().Where(i => Array.IndexOf(StoredArgs.Keys.ToArray(), i) == Array.IndexOf(RawArgs, arg)).ToArray()[0]] as Dictionary<string, object>)["Type"];
             object val;
             if (Convert.ToString(argtype).Contains("[]"))
-                val = Lexer.EvalExpr($"~[{arg}]~", Tokens, true, Convert.ToString(argtype).Replace("[]", ""));
+                val = Lexer.EvalExpr((argtype as string).Contains("string") ? $"{arg}" : $"~[{arg}]~", 
+                    Tokens, (argtype as string).Contains("string"), Convert.ToString(argtype).Replace("[]", ""));
             else 
                 val = Lexer.EvalExpr(arg, Tokens, Convert.ToString(argtype) == "string", Convert.ToString(argtype));
             if (val == null) return null;
