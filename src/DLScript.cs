@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using static System.Console;
 using System.Threading;
 using System.Diagnostics;
@@ -21,6 +21,7 @@ namespace DickLang {
         };
 
         private static void Main(string[] args) {
+
             WriteLine("DLScript Interpreter\n(c) WAP Industries. All Rights reserved.\n");
             while (true) {
                 ResetCompiler();
@@ -59,7 +60,7 @@ namespace DickLang {
                             LineNumber = LoopInfo.Key;
                             continue;
                         }
-                        if (LineNumber == (int)FunctionInfo["End"]+1)
+                        if (LineNumber == (int)FunctionInfo["End"])
                             Keywords.EscFunc();
                         LineNumber++;
                     }
