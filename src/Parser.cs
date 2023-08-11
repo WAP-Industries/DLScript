@@ -4,6 +4,7 @@ using static System.Text.Json.JsonSerializer;
 using System.Text.RegularExpressions;
 using DickLang;
 using System.Collections;
+using System.Net.Http.Headers;
 
 class Parser : DickLang.Compiler {
     private static readonly string[][] Patterns = new string[][]
@@ -219,6 +220,8 @@ class Parser : DickLang.Compiler {
                 return new object[] { "True", "False" }.Contains(a) ? "bool" : "string";
             if (arg=="number")
                 return CheckNumeric(a) ? "number" : "string";
+            if (arg == "object")
+                return "object";
             else
                 return "string";
         }).ToArray();

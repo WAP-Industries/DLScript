@@ -2,6 +2,8 @@
 using System.Text.RegularExpressions;
 using System.Data;
 using static System.Text.Json.JsonSerializer;
+using Microsoft.CodeAnalysis.Scripting.Hosting;
+using DickLang;
 
 class Lexer : DickLang.Compiler {
 
@@ -26,11 +28,23 @@ class Lexer : DickLang.Compiler {
                     .Replace("\uF481", "}")
                     .Replace("\uF482", ",");
 
-        if (new string[] { "true", "false" }.Contains(Convert.ToString(FinalExpr).ToLower())) FinalExpr = Serialize(Convert.ToBoolean(FinalExpr));
+        if (new string[] { "true", "false" }.Contains(Convert.ToString(FinalExpr).ToLower())) 
+            FinalExpr = Serialize(Convert.ToBoolean(FinalExpr));
 
         string FinalType = new string[] { "true", "false" }.Contains(Convert.ToString(FinalExpr).ToLower()) ? "bool" :
             Parser.CheckNumeric(Convert.ToString(FinalExpr)) ? "number":"string";
-        string ErrMsg = FinalType==LexType ? $"Failed {LexType} conversion":$"Invalid conversion from {FinalType} to {LexType}";
+        string ErrMsg = FinalType==LexType ? $"Failed {LexType} conversion" : $"Invalid conversion from {FinalType} to {LexType}";
+
+        if (LexType == "object") {
+            try {
+                Deserialize<Dictionary<string, object>>(Convert.ToString(FinalExpr).Replace("\uF483", "\""));
+                return Convert.ToString(FinalExpr).Replace("\uF483", "");
+            } 
+            catch {
+                return Error.CodeError("Type", ErrMsg);
+            }
+        }
+        FinalExpr = Convert.ToString(FinalExpr).Replace("\uF483", "");
 
         try {
             object result = EvaluateAsync(StrExpr ? $"$\"{FinalExpr}\"" : Convert.ToString(FinalExpr)).Result;
@@ -107,6 +121,8 @@ class Lexer : DickLang.Compiler {
                     var arr = Deserialize<object[]>(Serialize(Variable["Value"]));
                     VarValue = GetArrayString(arr);
                 }
+                else if (Variable["Properties"] != null)
+                    VarValue = GetObjectString(Serialize(Variable["Properties"]));
             }
             NewStrings.Add(Convert.ToString(VarValue));
         }
@@ -259,6 +275,21 @@ class Lexer : DickLang.Compiler {
         if (i.Count() < 2) return false;
         if (i.ElementAt(0) > i.ElementAt(1)) return false;
         return true;
+    }
+
+    private static string GetObjectString(string rawstring) {
+        char iden = '\uF483';
+        string GetPropString(string str) {
+            if (str[0] == '\"' && str[^1] == '\"')
+                str = str.Substring(1, str.Length-2);
+            return str.Replace("\"", "\\\"");
+        }
+
+        List<string> ObjArr = new();
+        var PropDic = Deserialize<Dictionary<string, Dictionary<string, object>>>(rawstring);
+        foreach (string name in PropDic.Keys)
+            ObjArr.Add($"{iden+name+iden}:{iden+GetPropString(Serialize(PropDic[name]["Value"]))+iden}");
+        return $"{{{String.Join(",", ObjArr)}}}";
     }
 
     private static string GetArrayString(object[] val) {

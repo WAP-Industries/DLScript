@@ -191,12 +191,15 @@ class Keywords : DickLang.Compiler {
                                 Tokens, type.Contains("string"), Convert.ToString(type).Replace("[]", ""));
                             value = Parser.SetArrayElems(new string[]{type, "nig", Convert.ToString(value)});
                         }
+                        else if (type == "object")
+                            value = Lexer.EvalExpr(_[i], Tokens, false, "object");
                         else
                             value = Lexer.EvalExpr(_[i], line, (ArgsList as string[])[i]=="string", "");
 
                         (Methods[parameters[0] as string]["Arguments"] as Dictionary<string, object>)[(PassedArgs)[i]] = new Dictionary<string, object>(){
                             {"Type", type},
                             {"ArrayType", type.Contains("[]") ? type.Replace("[]", "") :null },
+                            {"Properties", null },
                             {"Value",  value}
                         };
                     }
