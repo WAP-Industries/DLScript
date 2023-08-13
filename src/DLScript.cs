@@ -57,12 +57,12 @@ namespace DickLang {
                         }
 
                         if (!Run(Lines[LineNumber])) break;
-                        if (LineNumber == (int)FunctionInfo["End"])
-                            Keywords.EscFunc();
                         if (LineNumber == LoopInfo.Value) {
                             LineNumber = LoopInfo.Key;
                             continue;
                         }
+                        if (LineNumber == (int)FunctionInfo["End"])
+                            Keywords.EscFunc();
                         LineNumber++;
                     }
                     DisplayRunTime();

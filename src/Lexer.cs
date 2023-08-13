@@ -6,13 +6,12 @@ using Microsoft.CodeAnalysis.Scripting.Hosting;
 using DickLang;
 
 class Lexer : DickLang.Compiler {
-
     protected internal static object EvalExpr(string Expr, string[] Tokens, bool StrExpr, string LexType, bool CallError=true) {
         object FinalExpr = Expr.Replace("~[", "\uF480").Replace("]~", "\uF481");
 
         FinalExpr = ReplaceVariable(Convert.ToString(FinalExpr), StrExpr);
         if (FinalExpr==null) return null;
-
+        
         object DExpr = ReplaceDestructure(Convert.ToString(FinalExpr), StrExpr);
         if (DExpr == null) return null;
         if (Convert.ToString(DExpr) != Convert.ToString(FinalExpr)) return ReplaceDebugChar(Convert.ToString(DExpr));
@@ -45,6 +44,7 @@ class Lexer : DickLang.Compiler {
             }
         }
         FinalExpr = Convert.ToString(FinalExpr).Replace("\uF483", "");
+
 
         try {
             object result = EvaluateAsync(StrExpr ? $"$\"{FinalExpr}\"" : Convert.ToString(FinalExpr)).Result;
@@ -97,24 +97,33 @@ class Lexer : DickLang.Compiler {
             if (StrExpr && !WithinInterpolate(Expr, pair.Key)) continue;
             if (WithinIndex(Expr, pair.Key)) continue;
             string name = GetANString(Expr, pair.Key + 1, 1).Trim();
-            string arrname = null;
+            string arrname = null, objname = null;
             object VarValue;
 
             if (HasIndex(name) && name.Reverse().ToArray()[0]==']')
                 arrname = name.Substring(0, name.IndexOf("["));
 
-            if (!Coll.Keys.Contains(arrname ?? name))
-                return Error.CodeError("Reference", $"{type} {arrname ?? name} does not exist");
+            if (HasProperty(name))
+                objname = name.Substring(0, name.IndexOf("::"));
+            
+            if (!Coll.Keys.Contains(arrname ?? objname ?? name))
+                return Error.CodeError("Reference", $"{type} {arrname ?? objname ?? name} does not exist");
 
             Indexes.Add(new int[] { pair.Key, pair.Key + name.Length });
 
-            var Variable = Deserialize<Dictionary<string, object>>(Serialize(Coll[arrname ?? name]));
+            var Variable = Deserialize<Dictionary<string, object>>(Serialize(Coll[arrname ?? objname ?? name]));
             if (arrname!=null) {
                 if (Variable["ArrayType"] == null)
                     return Error.RunTimeError("Reference", $"Cannot apply indexing to {arrname} of non-array type");
                 VarValue = GetArrayElement(Variable["Value"], name, Convert.ToString(Variable["ArrayType"]));
                 if (VarValue == null) return null;
-            } 
+            }
+            else if (objname != null) {
+                if (Variable["Properties"] == null)
+                    return Error.RunTimeError("Reference", $"Cannot reference property of non-object type {objname}");
+                VarValue = GetProperty(Variable["Properties"], name, objname);
+                if (VarValue == null) return null;
+            }
             else {
                 VarValue = Convert.ToString(Variable["Value"]);
                 if (Variable["ArrayType"] != null) {
@@ -160,7 +169,7 @@ class Lexer : DickLang.Compiler {
                 NewStrings.Add(DString);
             } 
             catch {
-                return Error.RunTimeError("Type", $"Cannot destructure non-array type {value}");
+                return Error.CodeError("Type", $"Cannot destructure non-container type {value}");
             }
         }
         return ReplaceSubString(Expr, Indexes.ToArray(), NewStrings.ToArray());
@@ -277,6 +286,15 @@ class Lexer : DickLang.Compiler {
         return true;
     }
 
+    protected internal static bool HasProperty(string Str) {
+        for (int i = 0; i < Str.Length; i++) {
+            if (i == Str.Length - 1) break;
+            if (Str[i] == ':' && Str[i + 1] == ':')
+                return true;
+        }
+        return false;
+    }
+
     private static string GetObjectString(string rawstring) {
         char iden = '\uF483';
         string GetPropString(string str) {
@@ -316,6 +334,15 @@ class Lexer : DickLang.Compiler {
     
         string val = Convert.ToString(TrueArray[Convert.ToInt64(Index)]);
         return ArrayType == "string" ? $"\"{val}\"" : val;
+    }
+
+    private static object GetProperty(object RawDic, string VarName, string ObjName) {
+        var PropDic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(RawDic));
+        string propname = VarName.Substring(VarName.IndexOf("::") + 2);
+        if (!PropDic.Keys.Contains(propname))
+            return Error.RunTimeError("Reference", $"Object {ObjName} does not contain property {propname}");
+        string val = Convert.ToString(PropDic[propname]["Value"]);
+        return PropDic[propname]["Type"] == "string" ? $"\"{val}\"" : val;
     }
 
     private static string ReplaceDebugChar(string str) {

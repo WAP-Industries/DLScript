@@ -31,7 +31,7 @@ class Interpreter : DickLang.Compiler {
             object val;
             if (Tokens[0].Contains("[]"))
                 val = Parser.SetArrayElems(Tokens);
-            if (Tokens[0] == "object")
+            else if (Tokens[0] == "object")
                 val = Keywords.CreateObject(Tokens[2]);
             else
                 val = Tokens[2] == "__input__" ? GetInput(Tokens[0]) : GetArgs(Tokens, Tokens[2])[0];

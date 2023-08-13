@@ -5,6 +5,10 @@ using static System.Text.Json.JsonSerializer;
 using DickLang;
 using System.Text.RegularExpressions;
 using System.Data;
+using System.Runtime.CompilerServices;
+using System.Xml.Linq;
+using System.Security.Cryptography.X509Certificates;
+using System.ComponentModel;
 
 struct TokenInfo {
     public string[] Pattern, Args;
@@ -34,7 +38,7 @@ class Keywords : DickLang.Compiler {
         {"number", 0 },
         {"bool", true},
         {"object", "{..}"},
-        {"array", Array.Empty<object>()}
+        {"array", "[]"}
     };
     protected internal static readonly Regex Symbols = new Regex("[+-/*()<>!=&|\uF480\uF481]");
     protected internal static readonly string[] Blocks = { "if", "while", "class" };
@@ -47,6 +51,7 @@ class Keywords : DickLang.Compiler {
 
     protected internal static Dictionary<string, Keyword> Functions = new()
     {
+        // system stuff
         {
             "print", new Keyword(
                 new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string"}),
@@ -76,6 +81,17 @@ class Keywords : DickLang.Compiler {
                 }
              )
         },
+        {
+            "sleep", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args"}, new string[]{"number"}),
+                (parameters) => {
+                    Thread.Sleep((int) parameters[0]);
+                    return true;
+                }
+            )
+        },
+
+        // code flow stuff
         {
             "if", new Keyword(
                 new TokenInfo(new string[]{"keyword", "args"}, new string[]{"bool", "number"}),
@@ -132,6 +148,8 @@ class Keywords : DickLang.Compiler {
                 }
              )
         },
+
+        // function stuff
         {
             "function", new Keyword(
                 new TokenInfo(new string[]{"function", "name", "funcargs"}),
@@ -224,15 +242,8 @@ class Keywords : DickLang.Compiler {
                 }
             )
         },
-        {
-            "sleep", new Keyword(
-                new TokenInfo(new string[]{"keyword", "args"}, new string[]{"number"}),
-                (parameters) => {
-                    Thread.Sleep((int) parameters[0]);
-                    return true;
-                }
-            )
-        },
+
+        // array stuff
         {
             "set", new Keyword(
                 new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string", "number", "string"}),
@@ -256,23 +267,85 @@ class Keywords : DickLang.Compiler {
                 new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string", "number"}),
                 (parameters) => Convert.ToBoolean(ModifyArray(parameters[0], parameters[1], null, "remove"))
             )
+        },
+
+        // object stuff
+        {
+            "modify", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string", "string", "string"}),
+                (parameters)=>
+                    Convert.ToBoolean(ModifyObject(parameters[0], Convert.ToString(parameters[1]), Convert.ToString(parameters[2]), "modify"))
+            )
         }
     };
 
-    private static object ModifyArray(object _name, object _index, object _value, string mode) {
+    private static object GetVariable(string _name) {
         string rawname = (_name as string).Trim();
         string name = rawname.Substring(1);
         // check name
-        if (new char[] { '%', '$' }.Select(i => rawname[0]==i).ToArray().Length == 0)
+        if (new char[] { '%', '$' }.Select(i => rawname[0] == i).ToArray().Length == 0)
             return Error.RunTimeError("Syntax", "Array provided must be variable");
         if (rawname[0] == '%' && FunctionInfo["Name"] == null)
             return Error.RunTimeError("Syntax", "Cannot reference function arguments outside function block");
 
         var Coll = Deserialize<Dictionary<string, object>>(Serialize(
-            (rawname[0]=='$' ? Keywords.Variables : Keywords.Methods[FunctionInfo["Name"] as string]["Arguments"])));
+            (rawname[0] == '$' ? Keywords.Variables : Keywords.Methods[FunctionInfo["Name"] as string]["Arguments"])));
         if (!Coll.Keys.Contains(name))
             return Error.RunTimeError("Reference", $"{(rawname[0] == '$' ? "Variable" : "Function argument")} {name} does not exist");
 
+        return new object[] { rawname, name, Coll };
+    }
+
+    private static object ModifyObject(object _name, string property, string _value, string mode) {
+        var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name))));
+        (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
+        var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+        var ObjProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(
+                                Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
+
+        if (!ObjProperties.Keys.Contains(property))
+            return Error.RunTimeError("Reference", $"Object {name} does not contain property {property}");
+
+        object value=null;
+        if (Convert.ToString(ObjProperties[property]["Type"]).Contains("[]")) {
+            string[] tokens = new string[] { Convert.ToString(ObjProperties[property]["Type"]), "nigger", _value };
+            value = Parser.SetArrayElems(tokens);
+        }
+        else
+            Lexer.EvalExpr(_value, Array.Empty<string>(), Convert.ToString(ObjProperties[property]["Type"]) == "string", 
+                Convert.ToString(ObjProperties[property]["Type"]));
+        if (value == null) return null;
+
+        switch (mode) {
+            case "modify":
+                ObjProperties[property]["Value"] = value;
+                break;
+        }
+
+        // change property
+        var TempDic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(rawname[0] == '$' ? Variables :
+            Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"]));
+        var TempProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(TempDic[name]["Properties"]));
+        TempProperties[property] = new() {
+            { "Type", Convert.ToString(TempProperties[property]["Type"]).Replace("[]", "") },
+            { "ArrayType", TempProperties[property]["ArrayType"] },
+            { "Value",  value }
+        };
+        TempDic[name]["Properties"] = TempProperties;
+
+        if (rawname[0] == '$')
+            Keywords.Variables = TempDic;
+        else
+            Keywords.Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"] = TempDic;
+
+        return true;
+    }
+
+    private static object ModifyArray(object _name, object _index, object _value, string mode) {
+        var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name))));
+        (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
+        var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+        
         object[] array; 
         Dictionary<string, object> variable;
         try {
@@ -298,8 +371,7 @@ class Keywords : DickLang.Compiler {
 
         object value = null;
         if (mode != "remove") {
-            value = Lexer.EvalExpr(arrtype == "string" ? $"~[{Convert.ToString(_value)}]~" : Convert.ToString(_value),
-                        new string[] { "set" }, arrtype == "string", arrtype);
+            value = Lexer.EvalExpr(Convert.ToString(_value), new string[] { "set" }, arrtype == "string", arrtype);
             if (value == null) return null;
         }
 
@@ -359,7 +431,7 @@ class Keywords : DickLang.Compiler {
         List<string> ArgsList = new();
         List<string> ValuesList = new();
         
-        string[] RawArgs = Parser.SplitArgs(FuncArgs);
+        string[] RawArgs = Parser.SplitArgs(FuncArgs).Where(i=>i.Length>0).ToArray();
 
         foreach (var key in StoredArgs)
             ArgsList.Add((key.Value as Dictionary<string, object>)["Type"] as string);

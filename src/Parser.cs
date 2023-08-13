@@ -205,7 +205,7 @@ class Parser : DickLang.Compiler {
     }
 
     protected internal static object CheckArguments(string _Args, string[] ArgsList) {
-        string[] RawArgs = SplitArgs(_Args);
+        string[] RawArgs = SplitArgs(_Args).Where(i=>i.Length>0).ToArray();
         if (RawArgs.Length != ArgsList.Length)
             return Error.CodeError("Syntax", $"Expected {ArgsList.Length} arguments, received {RawArgs.Length}");
 
