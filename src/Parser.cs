@@ -200,7 +200,7 @@ class Parser : DickLang.Compiler {
             string name = prop.Substring(0, sep).Trim();
             string type = prop.Substring(sep+1).Trim();
             if (CheckName(name, "Object property") == null) return null;
-            if (!Keywords.DataTypes.Contains(type))
+            if (!Keywords.PropertyTypes.Contains(type))
                 return Error.CodeError("Type", $"{type} is an invalid object property type");
         }
         return true;

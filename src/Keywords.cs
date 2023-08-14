@@ -32,11 +32,15 @@ class Keywords : DickLang.Compiler {
         "string", "number", "bool", "object",
         "string[]", "number[]", "bool[]"
     };
+    protected internal static readonly string[] PropertyTypes = {
+        "string", "number", "bool",
+        "string[]", "number[]", "bool[]"
+    };
     protected internal static readonly Dictionary<string, object> DefaultValues = new(){
         {"string", "" },
         {"number", 0 },
         {"bool", true},
-        {"object", "{..}"},
+        {"object", "{}"},
         {"array", "[]"}
     };
     protected internal static readonly Regex Symbols = new Regex("[+-/*()<>!=&|\uF480\uF481]");
@@ -364,6 +368,7 @@ class Keywords : DickLang.Compiler {
         if (!ObjProperties.Keys.Contains(property) && mode!="add")
             return Error.RunTimeError("Reference", $"Object {name} does not contain property {property}");
 
+
         // check value
         object value=null;
         if (mode == "modify") {
@@ -382,7 +387,7 @@ class Keywords : DickLang.Compiler {
         else if (mode == "add") {
             if (Parser.CheckName(property, "Object property") == null) 
                 return null;
-            if (!Keywords.DataTypes.Contains(_value))
+            if (!Keywords.PropertyTypes.Contains(_value))
                 return Error.RunTimeError("Syntax", $"{_value} is not a valid data type");
             if (ObjProperties.Keys.Contains(property))
                 return Error.RunTimeError("Reference", $"Property {property} already exists");
