@@ -5,7 +5,9 @@ using static System.Text.Json.JsonSerializer;
 using DickLang;
 using System.Text.RegularExpressions;
 using System.Data;
-
+using System.Xml.Linq;
+using Microsoft.CodeAnalysis.Scripting.Hosting;
+using System.Runtime.CompilerServices;
 
 struct TokenInfo {
     public string[] Pattern, Args;
@@ -287,13 +289,20 @@ class Keywords : DickLang.Compiler {
                     Convert.ToBoolean(ModifyObject(parameters[0], Convert.ToString(parameters[1]), Convert.ToString(parameters[2]), "add"))
             )
         },
+        {
+            "clone", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string", "string"}),
+                (parameters)=>
+                    Convert.ToBoolean(CloneObject(Convert.ToString(parameters[0]), Convert.ToString(parameters[1])))
+            )
+        }
     };
 
     private static object GetVariable(string _name) {
         string rawname = (_name as string).Trim();
         string name = rawname.Substring(1);
         // check name
-        if (new char[] { '%', '$' }.Select(i => rawname[0] == i).ToArray().Length == 0)
+        if (new char[] { '%', '$' }.Where(i => rawname[0] == i).ToArray().Length == 0)
             return Error.RunTimeError("Syntax", "Array provided must be variable");
         if (rawname[0] == '%' && FunctionInfo["Name"] == null)
             return Error.RunTimeError("Syntax", "Cannot reference function arguments outside function block");
@@ -306,12 +315,50 @@ class Keywords : DickLang.Compiler {
         return new object[] { rawname, name, Coll };
     }
 
+    private static object CloneObject(string obj1_name, string obj2_name) {
+        // get object properties and containers
+        bool succeeded = true;
+        (Dictionary<string, object>?, Dictionary<string, Dictionary<string, object>>?) GetObject(string objname) {
+            var res = Deserialize<object[]>(Serialize(GetVariable(objname)));
+            if (res == null) { succeeded = false; return (null, null); }
+            (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
+            var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+            var ObjProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(
+                                    Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
+            if (ObjProperties == null) {
+                succeeded = false;
+                Error.RunTimeError("Type", $"Cannot modify variable {name} of non-object type");
+                return (null, null);
+            }
+            return (Coll, ObjProperties);
+        }
+        if (!succeeded) return null;
+        var (Obj1Coll, Obj1Properties) = GetObject(obj1_name);
+        var (Obj2Coll, Obj2Properties) = GetObject(obj2_name);
+
+
+        // clone object
+        var TempDic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(obj1_name[0] == '$' ? Variables :
+            Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"]));
+        TempDic[obj1_name.Substring(1)]["Properties"] = Obj2Properties;
+
+        if (obj1_name[0] == '$')
+            Keywords.Variables = TempDic;
+        else
+            Keywords.Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"] = TempDic;
+
+        return null;
+    }
+
     private static object ModifyObject(object _name, string property, string _value, string mode) {
         var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name))));
+        if (res == null) return null;
         (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
         var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
         var ObjProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(
                                 Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
+        if (ObjProperties == null)
+            return Error.RunTimeError("Type", $"Cannot modify variable {name} of non-object type");
 
         // check property
         if (!ObjProperties.Keys.Contains(property) && mode!="add")
@@ -376,6 +423,7 @@ class Keywords : DickLang.Compiler {
 
     private static object ModifyArray(object _name, object _index, object _value, string mode) {
         var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name))));
+        if (res == null) return null;
         (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
         var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
         
