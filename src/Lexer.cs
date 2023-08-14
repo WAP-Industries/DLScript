@@ -45,7 +45,6 @@ class Lexer : DickLang.Compiler {
         }
         FinalExpr = Convert.ToString(FinalExpr).Replace("\uF483", "");
 
-
         try {
             object result = EvaluateAsync(StrExpr ? $"$\"{FinalExpr}\"" : Convert.ToString(FinalExpr)).Result;
             if (LexType == "bool") {
@@ -342,6 +341,11 @@ class Lexer : DickLang.Compiler {
         if (!PropDic.Keys.Contains(propname))
             return Error.RunTimeError("Reference", $"Object {ObjName} does not contain property {propname}");
         string val = Convert.ToString(PropDic[propname]["Value"]);
+        if (PropDic[propname]["ArrayType"]!=null){
+            var arr = Deserialize<object[]>(val);
+            val = GetArrayString(arr);
+        }
+
         return PropDic[propname]["Type"] == "string" ? $"\"{val}\"" : val;
     }
 

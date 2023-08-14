@@ -9,6 +9,8 @@ using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using System.Security.Cryptography.X509Certificates;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
+using System.Security.AccessControl;
 
 struct TokenInfo {
     public string[] Pattern, Args;
@@ -207,7 +209,7 @@ class Keywords : DickLang.Compiler {
                         if (type.Contains("[]")) {
                             value = Lexer.EvalExpr(type.Contains("string") ? $"{_[i]}" : $"~[{_[i]}]~",
                                 Tokens, type.Contains("string"), Convert.ToString(type).Replace("[]", ""));
-                            value = Parser.SetArrayElems(new string[]{type, "nig", Convert.ToString(value)});
+                            value = Parser.SetArrayElems(null);
                         }
                         else if (type == "object")
                             value = Lexer.EvalExpr(_[i], Tokens, false, "object");
@@ -307,9 +309,12 @@ class Keywords : DickLang.Compiler {
             return Error.RunTimeError("Reference", $"Object {name} does not contain property {property}");
 
         object value=null;
-        if (Convert.ToString(ObjProperties[property]["Type"]).Contains("[]")) {
+        if (ObjProperties[property]["ArrayType"]!=null) {
             string[] tokens = new string[] { Convert.ToString(ObjProperties[property]["Type"]), "nigger", _value };
-            value = Parser.SetArrayElems(tokens);
+            string type = Convert.ToString(ObjProperties[property]["Type"]);
+            value = Lexer.EvalExpr(type.Contains("string") ? $"{_value}" : $"~[{_value}]~",
+                tokens, type.Contains("string"), type.Replace("[]", ""));
+            value = Parser.SetArrayElems(new string[] { type, "nig", Convert.ToString(value) });
         }
         else
             Lexer.EvalExpr(_value, Array.Empty<string>(), Convert.ToString(ObjProperties[property]["Type"]) == "string", 
@@ -326,11 +331,7 @@ class Keywords : DickLang.Compiler {
         var TempDic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(rawname[0] == '$' ? Variables :
             Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"]));
         var TempProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(TempDic[name]["Properties"]));
-        TempProperties[property] = new() {
-            { "Type", Convert.ToString(TempProperties[property]["Type"]).Replace("[]", "") },
-            { "ArrayType", TempProperties[property]["ArrayType"] },
-            { "Value",  value }
-        };
+        TempProperties[property] = ObjProperties[property];
         TempDic[name]["Properties"] = TempProperties;
 
         if (rawname[0] == '$')
@@ -474,7 +475,7 @@ class Keywords : DickLang.Compiler {
             string type = prop.Substring(sep + 1).Trim();
             NewObject.Add(
                 name, new() {
-                    { "Type", type },
+                    { "Type", (object) type.Replace("[]", "") },
                     { "ArrayType", type.Contains("[]") ? type.Replace("[]", "") : null },
                     { "Value", DefaultValues[type.Contains("[]") ? "array":type] }
                 }
