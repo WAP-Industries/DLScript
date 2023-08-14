@@ -5,9 +5,6 @@ using static System.Text.Json.JsonSerializer;
 using DickLang;
 using System.Text.RegularExpressions;
 using System.Data;
-using System.Xml.Linq;
-using Microsoft.CodeAnalysis.Scripting.Hosting;
-using System.Runtime.CompilerServices;
 
 struct TokenInfo {
     public string[] Pattern, Args;
@@ -30,7 +27,7 @@ struct Keyword {
 class Keywords : DickLang.Compiler {
     protected internal static readonly string[] DataTypes = {
         "string", "number", "bool", "object",
-        "string[]", "number[]", "bool[]"
+        "string[]", "number[]", "bool[]", "object[]"
     };
     protected internal static readonly string[] PropertyTypes = {
         "string", "number", "bool",
