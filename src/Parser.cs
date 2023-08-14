@@ -65,9 +65,10 @@ class Parser : DickLang.Compiler {
             }
 
             else {
-                if (CheckExpr(Tokens) == null) return null;
+                var _ = CheckExpr(Tokens);
+                if (_ == null) return null;
+                var args = (string[])_;
 
-                var args = (string[]) CheckExpr(Tokens);
                 if (
                     Keywords.DataTypes.Contains(Tokens[0]) &&
                     CheckVariable(Tokens[0], Tokens[1], args[0]) == null
@@ -160,7 +161,7 @@ class Parser : DickLang.Compiler {
         ).Any();
     }
 
-    private static object CheckName(string Name, string TokenType) {
+    protected internal static object CheckName(string Name, string TokenType) {
         if (new Regex(@"[`!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?~]").Matches(Convert.ToString(Name[0])).Count > 0)
             return Error.CodeError("Syntax", $"{TokenType} name cannot contain special characters");
         if (new Regex("[0-9]").Matches(Convert.ToString(Name[0])).Count > 0)
@@ -190,7 +191,7 @@ class Parser : DickLang.Compiler {
         return null;
     }
 
-    private static object CheckObject(string PropString) {
+    protected internal static object CheckObject(string PropString) {
         string[] properties = PropString.Split("<>");
         foreach (string prop in properties){
             int sep = prop.IndexOf(':');

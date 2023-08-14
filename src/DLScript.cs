@@ -93,7 +93,6 @@ namespace DickLang {
             LineNumber = 0;
             Keywords.Variables = new();
             Keywords.Methods = new();
-            Keywords.Classes = new();
             LoopInfo = new(-1, -1);
             FunctionInfo = new() {
                 { "Name",  null},

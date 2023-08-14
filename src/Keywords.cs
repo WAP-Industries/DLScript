@@ -49,7 +49,6 @@ class Keywords : DickLang.Compiler {
 
     protected internal static Dictionary<string, Dictionary<string, object>> Variables = new();
     protected internal static Dictionary<string, Dictionary<string, object>> Methods = new();
-    protected internal static Dictionary<string, object> Classes = new();
 
     protected internal static Dictionary<string, Keyword> Functions = new()
     {
@@ -265,7 +264,7 @@ class Keywords : DickLang.Compiler {
              )
         },
         {
-            "remove", new Keyword(
+            "pop", new Keyword(
                 new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string", "number"}),
                 (parameters) => Convert.ToBoolean(ModifyArray(parameters[0], parameters[1], null, "remove"))
             )
@@ -277,6 +276,20 @@ class Keywords : DickLang.Compiler {
                 new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string", "string", "string"}),
                 (parameters)=>
                     Convert.ToBoolean(ModifyObject(parameters[0], Convert.ToString(parameters[1]), Convert.ToString(parameters[2]), "modify"))
+            )
+        },
+        {
+            "remove", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string", "string"}),
+                (parameters)=>
+                    Convert.ToBoolean(ModifyObject(parameters[0], Convert.ToString(parameters[1]), null, "remove"))
+             )
+        },
+        {
+            "add", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args" }, new string[] {"string", "string", "string"}),
+                (parameters)=>
+                    Convert.ToBoolean(ModifyObject(parameters[0], Convert.ToString(parameters[1]), Convert.ToString(parameters[2]), "add"))
             )
         }
     };
@@ -305,34 +318,58 @@ class Keywords : DickLang.Compiler {
         var ObjProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(
                                 Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
 
-        if (!ObjProperties.Keys.Contains(property))
+        // check property
+        if (!ObjProperties.Keys.Contains(property) && mode!="add")
             return Error.RunTimeError("Reference", $"Object {name} does not contain property {property}");
 
+        // check value
         object value=null;
-        if (ObjProperties[property]["ArrayType"]!=null) {
-            string[] tokens = new string[] { Convert.ToString(ObjProperties[property]["Type"]), "nigger", _value };
+        if (mode == "modify") {
             string type = Convert.ToString(ObjProperties[property]["Type"]);
-            value = Lexer.EvalExpr(type.Contains("string") ? $"{_value}" : $"~[{_value}]~",
-                tokens, type.Contains("string"), type.Replace("[]", ""));
-            value = Parser.SetArrayElems(new string[] { type, "nig", Convert.ToString(value) });
+            if (ObjProperties[property]["ArrayType"]!=null) {
+                string[] tokens = new string[] { Convert.ToString(ObjProperties[property]["Type"]), "nigger", _value };
+                value = Lexer.EvalExpr(type.Contains("string") ? $"{_value}" : $"~[{_value}]~",
+                    tokens, type.Contains("string"), type.Replace("[]", ""));
+                value = Parser.SetArrayElems(new string[] { type, "nig", Convert.ToString(value) });
+            }
+            else
+                value = Lexer.EvalExpr(Convert.ToString(_value), new string[] {"modify"}, 
+                            Convert.ToString(ObjProperties[property]["Type"]) == "string", Convert.ToString(ObjProperties[property]["Type"]));
+            if (value == null) return null;
         }
-        else
-            Lexer.EvalExpr(_value, Array.Empty<string>(), Convert.ToString(ObjProperties[property]["Type"]) == "string", 
-                Convert.ToString(ObjProperties[property]["Type"]));
-        if (value == null) return null;
+        else if (mode == "add") {
+            if (Parser.CheckName(property, "Object property") == null) 
+                return null;
+            if (!Keywords.DataTypes.Contains(_value))
+                return Error.RunTimeError("Syntax", $"{_value} is not a valid data type");
+            if (ObjProperties.Keys.Contains(property))
+                return Error.RunTimeError("Reference", $"Property {property} already exists");
+        }
 
+
+        // change property
         switch (mode) {
             case "modify":
                 ObjProperties[property]["Value"] = value;
                 break;
+            case "remove":
+                ObjProperties.Remove(property);
+                break;
+            case "add":
+                string _type = Convert.ToString(_value);
+                ObjProperties.Add(
+                    property, new() {
+                        { "Type", (object) _type.Replace("[]", "") },
+                        { "ArrayType", _type.Contains("[]") ? _type.Replace("[]", "") : null },
+                        { "Value", DefaultValues[_type.Contains("[]") ? "array":_type] }
+                    }
+                );
+                break;
         }
 
-        // change property
         var TempDic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(rawname[0] == '$' ? Variables :
             Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"]));
-        var TempProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(TempDic[name]["Properties"]));
-        TempProperties[property] = ObjProperties[property];
-        TempDic[name]["Properties"] = TempProperties;
+        TempDic[name]["Properties"] = ObjProperties;
 
         if (rawname[0] == '$')
             Keywords.Variables = TempDic;
