@@ -482,6 +482,7 @@ class Keywords : DickLang.Compiler {
         tempdic[name] = new Dictionary<string, object>(){
             { "Type", variable["Type"] },
             { "ArrayType", variable["ArrayType"] },
+            { "Properties", variable["Properties"] },
             { "Value",  array}
         };
         if (rawname[0] == '$')

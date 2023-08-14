@@ -138,7 +138,7 @@ class Lexer : DickLang.Compiler {
         return ReplaceSubString(Expr, Indexes.ToArray(), NewStrings.ToArray());
     }
 
-        private static object ReplaceDestructure(string Expr, bool StrExpr) {
+    private static object ReplaceDestructure(string Expr, bool StrExpr) {
         List<int> DRef = new();
         for (int s = 0; s < Expr.Length; s++) {
             if (s > Expr.Length - 3) break;
