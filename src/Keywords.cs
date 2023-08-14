@@ -5,12 +5,7 @@ using static System.Text.Json.JsonSerializer;
 using DickLang;
 using System.Text.RegularExpressions;
 using System.Data;
-using System.Runtime.CompilerServices;
-using System.Xml.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
-using System.Security.AccessControl;
+
 
 struct TokenInfo {
     public string[] Pattern, Args;
@@ -291,7 +286,7 @@ class Keywords : DickLang.Compiler {
                 (parameters)=>
                     Convert.ToBoolean(ModifyObject(parameters[0], Convert.ToString(parameters[1]), Convert.ToString(parameters[2]), "add"))
             )
-        }
+        },
     };
 
     private static object GetVariable(string _name) {
@@ -505,6 +500,7 @@ class Keywords : DickLang.Compiler {
 
     protected internal static Dictionary<string, Dictionary<string, object>> CreateObject(string Properties) {
         Dictionary<string, Dictionary<string, object>> NewObject = new();
+        if (Properties.Trim() == "__empty__") return NewObject;
 
         foreach(string prop in Properties.Split("<>")){
             int sep = prop.IndexOf(":");
@@ -512,7 +508,7 @@ class Keywords : DickLang.Compiler {
             string type = prop.Substring(sep + 1).Trim();
             NewObject.Add(
                 name, new() {
-                    { "Type", (object) type.Replace("[]", "") },
+                    { "Type", type.Replace("[]", "") },
                     { "ArrayType", type.Contains("[]") ? type.Replace("[]", "") : null },
                     { "Value", DefaultValues[type.Contains("[]") ? "array":type] }
                 }

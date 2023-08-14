@@ -192,6 +192,7 @@ class Parser : DickLang.Compiler {
     }
 
     protected internal static object CheckObject(string PropString) {
+        if (PropString.Trim() == "__empty__") return true;
         string[] properties = PropString.Split("<>");
         foreach (string prop in properties){
             int sep = prop.IndexOf(':');
