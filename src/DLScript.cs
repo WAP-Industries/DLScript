@@ -6,6 +6,7 @@ using Microsoft.CodeAnalysis.Scripting.Hosting;
 
 namespace DickLang {
     class Compiler {
+        private static readonly string StartUpMsg = "DLScript Interpreter\n(c) WAP Industries. All Rights reserved.\n";
         protected internal static Stopwatch Timer = new Stopwatch();
         private protected static int LineNumber = 0;
         private protected static string[] CurrentCode;
@@ -23,12 +24,22 @@ namespace DickLang {
         private static void Main(string[] args) {
             Init();
 
-            WriteLine("DLScript Interpreter\n(c) WAP Industries. All Rights reserved.\n");
+            WriteLine(StartUpMsg);
             while (true) {
                 ResetCompiler();
                 Write(">>> ");
+
                 string input = ReadLine().Trim();
-                if (input == "__quit__") return;
+
+                // console commands
+                if (input == "__quit__") 
+                    return;
+                else if (input == "__cls__") {
+                    Clear();
+                    WriteLine(StartUpMsg);
+                }
+
+                // executing code files
                 else {
                     string[] Lines;
                     if (input.Trim().Length == 0) {

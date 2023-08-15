@@ -207,7 +207,7 @@ class Parser : DickLang.Compiler {
     }
 
     protected internal static object CheckArguments(string _Args, string[] ArgsList) {
-        string[] RawArgs = SplitArgs(_Args).Where(i=>i.Length>0).ToArray();
+        string[] RawArgs = SplitArgs(_Args);
         if (RawArgs.Length != ArgsList.Length)
             return Error.CodeError("Syntax", $"Expected {ArgsList.Length} arguments, received {RawArgs.Length}");
 
@@ -238,7 +238,7 @@ class Parser : DickLang.Compiler {
     }
 
     protected internal static string[] SplitArgs(string args) {
-        return args.Split("<>").Select(i => i.Trim()).ToArray();
+        return args.Split("<>").Select(i => i.Trim()).Where(i=>i.Length>0).ToArray();
     }
 
     protected internal static bool CheckNumeric(string value) {

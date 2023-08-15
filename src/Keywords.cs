@@ -521,8 +521,10 @@ class Keywords : DickLang.Compiler {
         List<string> ArgsList = new();
         List<string> ValuesList = new();
         
-        string[] RawArgs = Parser.SplitArgs(FuncArgs).Where(i=>i.Length>0).ToArray();
+        string[] RawArgs = Parser.SplitArgs(FuncArgs);
 
+        if (RawArgs.Length != StoredArgs.Keys.Count())
+            return Error.RunTimeError("Syntax", $"Expected {StoredArgs.Keys.Count()} arguments, received {RawArgs.Length}");
         foreach (var key in StoredArgs)
             ArgsList.Add((key.Value as Dictionary<string, object>)["Type"] as string);
         foreach (var arg in RawArgs) {
