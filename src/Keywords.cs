@@ -108,13 +108,13 @@ class Keywords : DickLang.Compiler {
                 {
                     if (!CheckBlockSpan(parameters[1], "while")) return null;
                     SetFutureError(parameters[1]);
+                    LoopInfo = new KeyValuePair<int, int>(LineNumber, LineNumber+(int)parameters[1]);
                     if (Serialize(parameters[0]) == "false")
                     {
                         LineNumber = LoopInfo.Value;
                         LoopInfo = new KeyValuePair<int, int>(-1, -1);
                         return true;
                     }
-                    LoopInfo = new KeyValuePair<int, int>(LineNumber, LineNumber+(int)parameters[1]);
                     return true;
                 }
             )
