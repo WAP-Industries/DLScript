@@ -1,6 +1,4 @@
 ﻿using System;
-using static System.Console;
-using static DickLang.Compiler;
 using static System.Text.Json.JsonSerializer;
 using DickLang;
 using System.Text.RegularExpressions;
@@ -203,20 +201,28 @@ class Keywords : DickLang.Compiler {
                         string type = (string) (FunctionArgs[FunctionArgs.Keys.ElementAt(i)] as Dictionary<string, object>)["Type"];
 
                         object value;
+                        Dictionary<string, Dictionary<string, object>>? Properties = null;
                         if (type.Contains("[]")) {
                             value = Lexer.EvalExpr(type.Contains("string") ? $"{_[i]}" : $"~[{_[i]}]~",
                                 Tokens, type.Contains("string"), Convert.ToString(type).Replace("[]", ""));
                             value = Parser.SetArrayElems(null);
                         }
-                        else if (type == "object")
-                            value = Lexer.EvalExpr(_[i], Tokens, false, "object");
+                        else if (type == "object") {
+                            var res = Deserialize<object[]>(Serialize(GetVariable(_[i])));
+                            if (res == null) return null;
+                            (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
+                            var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+                            Properties = Deserialize<Dictionary<string, Dictionary<string, object>>>(
+                                                    Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
+                            value = DefaultValues["object"];
+                        }
                         else
                             value = Lexer.EvalExpr(_[i], line, (ArgsList as string[])[i]=="string", "");
 
                         (Methods[parameters[0] as string]["Arguments"] as Dictionary<string, object>)[(PassedArgs)[i]] = new Dictionary<string, object>(){
                             {"Type", type},
                             {"ArrayType", type.Contains("[]") ? type.Replace("[]", "") :null },
-                            {"Properties", null },
+                            {"Properties", Properties},
                             {"Value",  value}
                         };
                     }
