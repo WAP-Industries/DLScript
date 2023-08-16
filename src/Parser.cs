@@ -1,10 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using DickLang;
 using static DickLang.Compiler;
 using static System.Text.Json.JsonSerializer;
 using System.Text.RegularExpressions;
-using DickLang;
 using System.Collections;
-using System.Net.Http.Headers;
+using System.Collections.Generic;
 
 class Parser : DickLang.Compiler {
     private static readonly string[][] Patterns = new string[][]
@@ -238,7 +237,7 @@ class Parser : DickLang.Compiler {
     }
 
     protected internal static string[] SplitArgs(string args) {
-        return args.Split("<>").Select(i => i.Trim()).Where(i=>i.Length>0).ToArray();
+        return args.Split("<>").Where(i=>i.Length>0).Select(i => i.Trim().Length==0 ? i:i.Trim()).ToArray();
     }
 
     protected internal static bool CheckNumeric(string value) {

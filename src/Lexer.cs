@@ -24,16 +24,15 @@ class Lexer : DickLang.Compiler {
         // replace strings
         if (
             Tokens.Length > 0 &&
-            ((StrExpr && !Keywords.DataTypes.Contains(Tokens[0])) ||
-            Keywords.Conditionals.Contains(Tokens[0]))
-        ) FinalExpr = ReplaceString(Convert.ToString(FinalExpr).Replace(" ", "\uF483"), Keywords.Blocks.Contains(Tokens[0]));
-        
+            (StrExpr || Keywords.Conditionals.Contains(Tokens[0]))
+        ) FinalExpr = ReplaceString(Convert.ToString(FinalExpr).Replace(" ", "\uF484"), Keywords.Blocks.Contains(Tokens[0]));
+
         // replace debug chars
         FinalExpr = Convert.ToString(FinalExpr)
                     .Replace("\uF480", "{")
                     .Replace("\uF481", "}")
                     .Replace("\uF482", ",")
-                    .Replace("\uF483", " ");
+                    .Replace("\uF484", " ");
 
         if (new string[] { "true", "false" }.Contains(Convert.ToString(FinalExpr).ToLower())) 
             FinalExpr = Serialize(Convert.ToBoolean(FinalExpr));
@@ -53,7 +52,6 @@ class Lexer : DickLang.Compiler {
         }
         FinalExpr = Convert.ToString(FinalExpr).Replace("\uF483", "");
 
-        Console.WriteLine(FinalExpr);
         try {
             object result = EvaluateAsync(StrExpr ? $"$\"{FinalExpr}\"" : Convert.ToString(FinalExpr)).Result;
             if (LexType == "bool") {
@@ -392,10 +390,8 @@ class Lexer : DickLang.Compiler {
         object[] ArrayValue = Array.Empty<object>();
         if (isArray)
             ArrayValue = Deserialize<object[]>(Serialize(RawValue));
-        else {
-            string TrueValue = Convert.ToString(RawValue);
-            StrValue = TrueValue.Substring(1, TrueValue.Length-2);
-        }
+        else
+            StrValue = Convert.ToString(RawValue);
 
         if (Convert.ToInt64(Index) < 0 || Convert.ToInt64(Index) >= (isArray ? ArrayValue.Length : StrValue.Length))
             return Error.RunTimeError("Reference", $"Index {Index} is out of bounds");
