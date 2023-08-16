@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using System.Data;
 using static System.Text.Json.JsonSerializer;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using static DickLang.Compiler;
 
 class Lexer : DickLang.Compiler {
     protected internal static object EvalExpr(string Expr, string[] Tokens, bool StrExpr, string LexType, bool CallError=true) {
@@ -25,13 +26,14 @@ class Lexer : DickLang.Compiler {
             Tokens.Length > 0 &&
             ((StrExpr && !Keywords.DataTypes.Contains(Tokens[0])) ||
             Keywords.Conditionals.Contains(Tokens[0]))
-        ) FinalExpr = ReplaceString(Convert.ToString(FinalExpr), Keywords.Blocks.Contains(Tokens[0]));
+        ) FinalExpr = ReplaceString(Convert.ToString(FinalExpr).Replace(" ", "\uF483"), Keywords.Blocks.Contains(Tokens[0]));
         
         // replace debug chars
         FinalExpr = Convert.ToString(FinalExpr)
                     .Replace("\uF480", "{")
                     .Replace("\uF481", "}")
-                    .Replace("\uF482", ",");
+                    .Replace("\uF482", ",")
+                    .Replace("\uF483", " ");
 
         if (new string[] { "true", "false" }.Contains(Convert.ToString(FinalExpr).ToLower())) 
             FinalExpr = Serialize(Convert.ToBoolean(FinalExpr));
@@ -51,6 +53,7 @@ class Lexer : DickLang.Compiler {
         }
         FinalExpr = Convert.ToString(FinalExpr).Replace("\uF483", "");
 
+        Console.WriteLine(FinalExpr);
         try {
             object result = EvaluateAsync(StrExpr ? $"$\"{FinalExpr}\"" : Convert.ToString(FinalExpr)).Result;
             if (LexType == "bool") {
@@ -86,11 +89,7 @@ class Lexer : DickLang.Compiler {
         void AddSubString(int[] indexes, string value) {
             Indexes.Add(indexes);
             NewStrings.Add(
-                Convert.ToString(
-                    value=="__rnd__" ?
-                    DickLang.Compiler.Rand() : 
-                    Keywords.SpecialValues[value]
-                )
+                Convert.ToString(value=="__rnd__" ? Rand() : Keywords.SpecialValues[value])
             );
         }
 
@@ -170,9 +169,10 @@ class Lexer : DickLang.Compiler {
                 if (VarValue == null) return null;
             }
             else if (arrname!=null) {
-                if (Variable["ArrayType"] == null)
-                    return Error.RunTimeError("Reference", $"Cannot apply indexing to {arrname} of non-array type");
-                VarValue = GetArrayElement(Variable["Value"], name, Convert.ToString(Variable["ArrayType"]));
+                if (Variable["ArrayType"] == null && Convert.ToString(Variable["Type"])!="string")
+                    return Error.RunTimeError("Reference", $"Cannot apply indexing to {arrname} of non-array or string type");
+                VarValue = GetArrayElement(Variable["Value"], name, 
+                    Convert.ToString(Variable["ArrayType" ?? "Type"]), Variable["ArrayType"]!=null);
                 if (VarValue == null) return null;
             }
             else if (objname != null) {
@@ -378,20 +378,30 @@ class Lexer : DickLang.Compiler {
         return $"[{elemstr}]";
     }
 
-    private static object GetArrayElement(object RawArray, string VarName, string ArrayType) {
+    private static object GetArrayElement(object RawValue, string VarName, string VarType, bool isArray) {
         string ArrName = VarName.Substring(0, VarName.IndexOf("["));
-        object i = VarName.Substring(VarName.IndexOf("[") + 1, VarName.IndexOf("]")-VarName.IndexOf("[")-1);
+        int LastBrace = VarName.Length-1-Array.IndexOf(VarName.ToCharArray().Reverse().ToArray(), ']');
+        object i = VarName.Substring(VarName.IndexOf("[") + 1, LastBrace-VarName.IndexOf("[")-1);
 
+        // check index
         object Index = Lexer.EvalExpr(Convert.ToString(i), Array.Empty<string>(), false, "number", false);
         if (Index == null)
             return Error.RunTimeError("Reference", $"Index must be an integer");
 
-        object[] TrueArray = Deserialize<object[]>(Serialize(RawArray));
-        if (Convert.ToInt64(Index) < 0 || Convert.ToInt64(Index) >= TrueArray.Length)
+        string StrValue = "";
+        object[] ArrayValue = Array.Empty<object>();
+        if (isArray)
+            ArrayValue = Deserialize<object[]>(Serialize(RawValue));
+        else {
+            string TrueValue = Convert.ToString(RawValue);
+            StrValue = TrueValue.Substring(1, TrueValue.Length-2);
+        }
+
+        if (Convert.ToInt64(Index) < 0 || Convert.ToInt64(Index) >= (isArray ? ArrayValue.Length : StrValue.Length))
             return Error.RunTimeError("Reference", $"Index {Index} is out of bounds");
     
-        string val = Convert.ToString(TrueArray[Convert.ToInt64(Index)]);
-        return ArrayType == "string" ? $"\"{val}\"" : val;
+        string val = Convert.ToString(isArray ? ArrayValue[Convert.ToInt64(Index)] : StrValue[Convert.ToInt32(Index)]);
+        return VarType == "string" ? $"\"{val}\"" : val;
     }
 
     private static object GetProperty(object RawDic, string VarName, string ObjName) {
