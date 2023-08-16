@@ -38,6 +38,13 @@ class Keywords : DickLang.Compiler {
         {"object", "{}"},
         {"array", "[]"}
     };
+    private static readonly int MaxDP = 10;
+    protected internal static readonly Dictionary<string, object> SpecialValues = new() {
+        { "__pi__", Math.Round(Math.PI, MaxDP) },
+        { "__e__",  Math.E },
+        { "__phi__", Math.Round((1 + Math.Sqrt(5)) / 2, MaxDP) },
+        { "__rnd__", null }
+    };
     protected internal static readonly Regex Symbols = new Regex("[+-/*()<>!=&|\uF480\uF481]");
     protected internal static readonly string[] Blocks = { "if", "while", "class" };
     protected internal static readonly string[] Conditionals = { "if", "while" };

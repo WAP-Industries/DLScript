@@ -21,6 +21,10 @@ namespace DickLang {
             { "Error", Array.Empty<object>() }
         };
 
+        // generating random numbers
+        private static Random Seed = new Random();
+        protected internal static double Rand() => Math.Round(Seed.NextDouble(), 10);
+
         private static void Main(string[] args) {
             Init();
 

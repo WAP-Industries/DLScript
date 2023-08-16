@@ -2,26 +2,31 @@
 using System.Text.RegularExpressions;
 using System.Data;
 using static System.Text.Json.JsonSerializer;
-using Microsoft.CodeAnalysis.Scripting.Hosting;
-using DickLang;
 
 class Lexer : DickLang.Compiler {
     protected internal static object EvalExpr(string Expr, string[] Tokens, bool StrExpr, string LexType, bool CallError=true) {
         object FinalExpr = Expr.Replace("~[", "\uF480").Replace("]~", "\uF481");
 
+        // replace variables
         FinalExpr = ReplaceVariable(Convert.ToString(FinalExpr), StrExpr);
         if (FinalExpr==null) return null;
-        
+
+        // replace special keywords
+        FinalExpr = ReplaceSpecialValues(Convert.ToString(FinalExpr), StrExpr);
+
+        // replace destructure
         object DExpr = ReplaceDestructure(Convert.ToString(FinalExpr), StrExpr);
         if (DExpr == null) return null;
         if (Convert.ToString(DExpr) != Convert.ToString(FinalExpr)) return ReplaceDebugChar(Convert.ToString(DExpr));
 
+        // replace strings
         if (
             Tokens.Length > 0 &&
             ((StrExpr && !Keywords.DataTypes.Contains(Tokens[0])) ||
             Keywords.Conditionals.Contains(Tokens[0]))
         ) FinalExpr = ReplaceString(Convert.ToString(FinalExpr), Keywords.Blocks.Contains(Tokens[0]));
         
+        // replace debug chars
         FinalExpr = Convert.ToString(FinalExpr)
                     .Replace("\uF480", "{")
                     .Replace("\uF481", "}")
@@ -69,6 +74,50 @@ class Lexer : DickLang.Compiler {
             }
             return CallError ? Error.CodeError("Type", ErrMsg) : null;
         }
+    }
+
+    private static object ReplaceSpecialValues(string Expr, bool StrExpr) {
+        List<int[]> Indexes = new();
+        List<string> NewStrings = new();
+        bool CheckMatch(char c) =>
+            Keywords.Symbols.Matches(Convert.ToString(c)).Count() > 0;
+
+        void AddSubString(int[] indexes, string value) {
+            Indexes.Add(indexes);
+            NewStrings.Add(
+                Convert.ToString(
+                    value=="__rnd__" ?
+                    DickLang.Compiler.Rand() : 
+                    Keywords.SpecialValues[value]
+                )
+            );
+        }
+
+        // step until symbol, replace if special value
+        string SubStr="";
+        for (int i=0;i<Expr.Length;i++) {
+            if (CheckMatch(Expr[i])) {
+                bool Interp = StrExpr && !WithinInterpolate(Expr, i-2);
+                if (Interp) {
+                    SubStr = ""; 
+                    continue; 
+                }
+                string Value = SubStr.Trim();
+                if (Keywords.SpecialValues.Keys.Contains(Value))
+                    AddSubString(new int[] { i-SubStr.Length, i-1 }, Value);
+                SubStr = "";
+            }
+            else if (i == Expr.Length - 1) {
+                bool Interp = StrExpr && !WithinInterpolate(Expr, i - 3);
+                if (Interp) break;
+                string Value = Expr.Substring(i-SubStr.Length, SubStr.Length).Trim() + Expr[i];
+                if (Keywords.SpecialValues.Keys.Contains(Value))
+                    AddSubString(new int[] { i - SubStr.Length+Convert.ToInt32(StrExpr)*-1, i }, Value);
+            }
+            if (!CheckMatch(Expr[i])) SubStr += Expr[i];
+        }
+        var res = ReplaceSubString(Expr, Indexes.ToArray(), NewStrings.ToArray());
+        return res;
     }
 
     protected internal static object ReplaceVariable(string Expr, bool StrExpr) {
@@ -191,14 +240,14 @@ class Lexer : DickLang.Compiler {
         };
 
         for (int i = 0; i < Str.Length; i++) {
-            if (CheckSymbol(Convert.ToString(Str[i]))) {
+            if (CheckSymbol(Convert.ToString(Str[i])) && !WithinInterpolate(Str, i)) {
                 if (SubStr.Trim().Length > 0 && !SubStr.EndsWith('"'))
                     AddSubstring(new int[] { i - SubStr.Length, SubStr.Length });
                 SubStr = "";
                 continue;
             }
             if (!CheckInterpolate(Str[i])) SubStr += Str[i];
-            if (i == Str.Length - 1 && !SubStr.EndsWith('"'))
+            if (i == Str.Length - 1 && !SubStr.EndsWith('"') && !WithinInterpolate(Str, i))
                 AddSubstring(new int[] { i - SubStr.Length + 1, SubStr.Length });
         }
 
