@@ -41,15 +41,17 @@ class Interpreter : DickLang.Compiler {
 
             if (Keywords.Variables.ContainsKey(Tokens[1]))
                 Keywords.Variables.Remove(Tokens[1]);
+
             Keywords.Variables.Add(
                 Tokens[1], new Dictionary<string, object>()
                 {
-                    { "Type", Tokens[0].Replace("[]", "") },
+                    { "Type", Tokens[0] },
                     { "ArrayType", Tokens[0].Contains("[]") ? Tokens[0].Replace("[]", "") : null },
                     { "Properties", Tokens[0]=="object" ? val:null},
                     { "Value", Tokens[0].Contains("[]") ? val : 
                                 Tokens[0]=="object" ? $"\"{Keywords.DefaultValues["object"]}\"" :
-                                Tokens[0]=="number" ? val : $"\"{val}\""}
+                                Tokens[0]=="number" ? val : $"\"{val}\""},
+                    { "Attributes", Keywords.SetAttribute(val, Tokens[0]) }
                 }
             );
             return true;

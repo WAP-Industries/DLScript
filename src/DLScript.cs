@@ -45,12 +45,22 @@ namespace DickLang {
 
                 // executing code files
                 else {
+                    string ReverseString(string str) =>
+                        new string(str.ToCharArray().Reverse().ToArray());
+
                     string[] Lines;
                     if (input.Trim().Length == 0) {
                         WriteLine("No file provided");
                         continue;
                     }
-                    try { Lines = CurrentCode = File.ReadAllLines(input); }
+                    try { 
+                        Lines = CurrentCode = File.ReadAllLines(input);
+
+                        if (ReverseString(input).IndexOf(ReverseString(".dlscript")) != 0) {
+                            WriteLine("Invalid file extension, can only run .dlscript files");
+                            continue;
+                        }
+                    }
                     catch {
                         WriteLine($"Invalid file path: {input}");
                         continue;

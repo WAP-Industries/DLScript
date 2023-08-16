@@ -2,6 +2,7 @@
 using System.Text.RegularExpressions;
 using System.Data;
 using static System.Text.Json.JsonSerializer;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 class Lexer : DickLang.Compiler {
     protected internal static object EvalExpr(string Expr, string[] Tokens, bool StrExpr, string LexType, bool CallError=true) {
@@ -145,7 +146,7 @@ class Lexer : DickLang.Compiler {
             if (StrExpr && !WithinInterpolate(Expr, pair.Key)) continue;
             if (WithinIndex(Expr, pair.Key)) continue;
             string name = GetANString(Expr, pair.Key + 1, 1).Trim();
-            string arrname = null, objname = null;
+            string arrname = null, objname = null, attribname = null;
             object VarValue;
 
             if (HasIndex(name) && name.Reverse().ToArray()[0]==']')
@@ -153,14 +154,22 @@ class Lexer : DickLang.Compiler {
 
             if (HasProperty(name))
                 objname = name.Substring(0, name.IndexOf("::"));
+
+            if (name.Contains("@"))
+                attribname = name.Substring(0, name.IndexOf("@"));
+
             
-            if (!Coll.Keys.Contains(arrname ?? objname ?? name))
-                return Error.CodeError("Reference", $"{type} {arrname ?? objname ?? name} does not exist");
+            if (!Coll.Keys.Contains(attribname ?? arrname ?? objname ?? name))
+                return Error.CodeError("Reference", $"{type} {attribname ?? arrname ?? objname ?? name} does not exist");
 
             Indexes.Add(new int[] { pair.Key, pair.Key + name.Length });
 
-            var Variable = Deserialize<Dictionary<string, object>>(Serialize(Coll[arrname ?? objname ?? name]));
-            if (arrname!=null) {
+            var Variable = Deserialize<Dictionary<string, object>>(Serialize(Coll[attribname ?? arrname ?? objname ?? name]));
+            if (attribname != null) {
+                VarValue = GetAttribute(Variable["Attributes"], name, attribname);
+                if (VarValue == null) return null;
+            }
+            else if (arrname!=null) {
                 if (Variable["ArrayType"] == null)
                     return Error.RunTimeError("Reference", $"Cannot apply indexing to {arrname} of non-array type");
                 VarValue = GetArrayElement(Variable["Value"], name, Convert.ToString(Variable["ArrayType"]));
@@ -240,14 +249,14 @@ class Lexer : DickLang.Compiler {
         };
 
         for (int i = 0; i < Str.Length; i++) {
-            if (CheckSymbol(Convert.ToString(Str[i])) && !WithinInterpolate(Str, i)) {
+            if (CheckSymbol(Convert.ToString(Str[i]))) {
                 if (SubStr.Trim().Length > 0 && !SubStr.EndsWith('"'))
                     AddSubstring(new int[] { i - SubStr.Length, SubStr.Length });
                 SubStr = "";
                 continue;
             }
             if (!CheckInterpolate(Str[i])) SubStr += Str[i];
-            if (i == Str.Length - 1 && !SubStr.EndsWith('"') && !WithinInterpolate(Str, i))
+            if (i == Str.Length - 1 && !SubStr.EndsWith('"'))
                 AddSubstring(new int[] { i - SubStr.Length + 1, SubStr.Length });
         }
 
@@ -361,9 +370,10 @@ class Lexer : DickLang.Compiler {
     private static string GetArrayString(object[] val) {
         object[] rawelems = (object[])val;
         string elemstr = "";
-        foreach (var elem in rawelems) {
+        for (int i = 0; i < rawelems.Length; i++) {
+            string elem = Convert.ToString(rawelems[i]);
             elemstr += Convert.ToString(elem).Replace("\"", "\\\"");
-            if (Array.IndexOf(rawelems, elem) != rawelems.Length - 1) elemstr += "\uF482";
+            if (i < rawelems.Length - 1) elemstr += "\uF482";
         }
         return $"[{elemstr}]";
     }
@@ -396,6 +406,16 @@ class Lexer : DickLang.Compiler {
         }
 
         return PropDic[propname]["Type"] == "string" ? $"\"{val}\"" : val;
+    }
+
+    private static object GetAttribute(object RawAttrib, string FullName, string VarName) {
+        var Attributes = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(RawAttrib));
+        string AttribName = FullName.Substring(FullName.IndexOf("@")+1).Trim();
+        if (!Attributes.Keys.Contains(AttribName))
+            return Error.RunTimeError("Reference", $"Variable {VarName} does not contain the attribute {AttribName}");
+        string Type = Convert.ToString(Attributes[AttribName]["Type"]);
+        object value = Attributes[AttribName]["Value"];
+        return Type=="string" ? $"\"{value}\"" : value;
     }
 
     private static string ReplaceDebugChar(string str) {

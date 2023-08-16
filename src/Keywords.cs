@@ -169,7 +169,8 @@ class Keywords : DickLang.Compiler {
                             {"Type", argtype},
                             {"ArrayType", "null"},
                             {"Properties", "null"},
-                            {"Value", DefaultValues[argtype.Contains("[]") ? "array": argtype]}
+                            {"Value", DefaultValues[argtype.Contains("[]") ? "array": argtype]},
+                            {"Attributes", new Dictionary<string, Dictionary<string, object>>()}
                         });
                     }
                     if (Keywords.Methods.ContainsKey(parameters[0] as string))
@@ -212,7 +213,7 @@ class Keywords : DickLang.Compiler {
                         if (type.Contains("[]")) {
                             value = Lexer.EvalExpr(type.Contains("string") ? $"{_[i]}" : $"~[{_[i]}]~",
                                 Tokens, type.Contains("string"), Convert.ToString(type).Replace("[]", ""));
-                            value = Parser.SetArrayElems(null);
+                            value = Parser.SetArrayElems(new string[]{ type, "nig", Convert.ToString(value)});
                         }
                         else if (type == "object") {
                             var res = Deserialize<object[]>(Serialize(GetVariable(_[i])));
@@ -230,7 +231,8 @@ class Keywords : DickLang.Compiler {
                             {"Type", type},
                             {"ArrayType", type.Contains("[]") ? type.Replace("[]", "") :null },
                             {"Properties", Properties},
-                            {"Value",  value}
+                            {"Value",  value},
+                            {"Attributes", SetAttribute(value, type) }
                         };
                     }
 
@@ -471,10 +473,10 @@ class Keywords : DickLang.Compiler {
             if (value == null) return null;
         }
 
-        var list = array.ToList<object>(); 
+        var list = array.ToList<object>();
         switch (mode) {
             case "set":
-               array[Convert.ToInt64(index)] = value;
+                array[Convert.ToInt64(index)] = value;
                 break;
             case "append":
                 list.Add(value);
@@ -496,7 +498,8 @@ class Keywords : DickLang.Compiler {
             { "Type", variable["Type"] },
             { "ArrayType", variable["ArrayType"] },
             { "Properties", variable["Properties"] },
-            { "Value",  array}
+            { "Value",  array},
+            { "Attributes", SetAttribute(array, Convert.ToString(variable["Type"])) }
         };
         if (rawname[0] == '$')
             Keywords.Variables = tempdic;
@@ -581,5 +584,26 @@ class Keywords : DickLang.Compiler {
             );
         }
         return NewObject;
+    }
+
+    protected internal static Dictionary<string, Dictionary<string, object>> SetAttribute(object Value, string Type) {
+        Dictionary<string, Dictionary<string, object>> Attributes = new();
+
+        void AddAttribute(string name, object value, string type) {
+            Attributes.Add(
+                name, new() {
+                    { "Value", value },
+                    { "Type", type }
+                }
+            );
+        }
+
+        if (Type.Contains("[]"))
+            AddAttribute("length", Deserialize<object[]>(Serialize(Value)).Length, "number");
+        if (Type == "string")
+            AddAttribute("length", Convert.ToString(Value).Length, "number");
+
+        AddAttribute("type", Type, "string");
+        return Attributes;
     }
 }
