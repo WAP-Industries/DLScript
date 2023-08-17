@@ -83,8 +83,7 @@ class Parser : DickLang.Compiler {
 
     protected internal static object SetArrayElems(string[] Tokens) {
         string type = Tokens[0].Replace("[]", "");
-        Type arraytype = Type.GetType(type == "bool" ? "System.Boolean" : type == "number" ? "System.Decimal" : "System.String");
-        IList elems = (IList) Activator.CreateInstance(typeof(List<>).MakeGenericType(arraytype));
+        List<object> elems = new();
 
         if (Tokens[2].Trim() == "__empty__")
             return elems;
@@ -94,16 +93,17 @@ class Parser : DickLang.Compiler {
         string[] uRawargs = Tokens[2].Split(">>").Select(i => i.Trim()).ToArray();
         List<string> rawargs = new();
         foreach (string arg in uRawargs) {
-            string res = Convert.ToString(Lexer.EvalExpr(arg, line, type=="string", type));
+            string res = type=="object" ? arg : Convert.ToString(Lexer.EvalExpr(arg, line, type=="string", type));
             foreach (var elem in res.Split(">>").Select(i => i.Trim()).ToArray()) rawargs.Add(elem);
         }
-
+        
         foreach (var arg in rawargs) {
             if (arg.Trim().Length == 0)
                 return Error.CodeError("Syntax", "Undefined array element");
-            object res = Lexer.EvalExpr(arg, line, type == "string", type);
+
+            object res = type=="object" ? Keywords.GetArgObject(arg) : Lexer.EvalExpr(arg, line, type == "string", type);
             if (res==null) return null;
-            elems.Add(Convert.ChangeType(res, arraytype));
+            elems.Add(res);
         }
         return elems;
     }

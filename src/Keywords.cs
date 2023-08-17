@@ -232,7 +232,7 @@ class Keywords : DickLang.Compiler {
                             {"ArrayType", type.Contains("[]") ? type.Replace("[]", "") :null },
                             {"Properties", Properties},
                             {"Value",  value},
-                            {"Attributes", SetAttribute(value, type) }
+                            {"Attributes", SetAttribute(type=="object" ? Properties : value, type) }
                         };
                     }
 
@@ -279,7 +279,7 @@ class Keywords : DickLang.Compiler {
         {
             "pop", new Keyword(
                 new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string", "number"}),
-                (parameters) => Convert.ToBoolean(ModifyArray(parameters[0], parameters[1], null, "remove"))
+                (parameters) => Convert.ToBoolean(ModifyArray(parameters[0], parameters[1], null, "pop"))
             )
         },
 
@@ -314,12 +314,12 @@ class Keywords : DickLang.Compiler {
         }
     };
 
-    private static object GetVariable(string _name) {
+    private static object GetVariable(string _name, string Type="array") {
         string rawname = _name.Trim();
         string name = rawname.Substring(1);
         // check name
         if (new char[] { '%', '$' }.Where(i => rawname[0] == i).ToArray().Length == 0)
-            return Error.RunTimeError("Syntax", "Array provided must be variable");
+            return Error.RunTimeError("Syntax", $"An {Type} must be provided");
         if (rawname[0] == '%' && FunctionInfo["Name"] == null)
             return Error.RunTimeError("Syntax", "Cannot reference function arguments outside function block");
 
@@ -329,6 +329,20 @@ class Keywords : DickLang.Compiler {
             return Error.RunTimeError("Reference", $"{(rawname[0] == '$' ? "Variable" : "Function argument")} {name} does not exist");
 
         return new object[] { rawname, name, Coll };
+    }
+
+    protected internal static Dictionary<string, Dictionary<string, object>>? GetArgObject(string RawName) {
+        try {
+            return Deserialize<Dictionary<string, Dictionary<string, object>>>(RawName);
+        }
+        catch {
+            var res = Deserialize<object[]>(Serialize(Keywords.GetVariable(RawName, "object")));
+            if (res == null) return null;
+            (string _, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
+            var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+            return Deserialize<Dictionary<string, Dictionary<string, object>>>(
+                    Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
+        }
     }
 
     private static object CloneObject(string obj1_name, string obj2_name) {
@@ -469,8 +483,16 @@ class Keywords : DickLang.Compiler {
         string arrtype = Convert.ToString(variable["ArrayType"]);
 
         object value = null;
-        if (mode != "remove") {
-            value = Lexer.EvalExpr(Convert.ToString(_value), new string[] { "set" }, arrtype == "string", arrtype);
+        if (mode != "pop") {
+            if (arrtype == "object") {
+                var objres = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_value))));
+                if (objres == null) return null;
+                (string _, string ObjName, object _ObjColl) = (Convert.ToString(objres[0]), Convert.ToString(objres[1]), objres[2]);
+                var ObjColl = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(_ObjColl));
+                value = ObjColl[ObjName]["Properties"];
+            }
+            else
+                value = Lexer.EvalExpr(Convert.ToString(_value), new string[] { "set" }, arrtype == "string", arrtype);
             if (value == null) return null;
         }
 
@@ -483,7 +505,7 @@ class Keywords : DickLang.Compiler {
                 list.Add(value);
                 array = list.ToArray();
                 break;
-            case "remove":
+            case "pop":
                 list.RemoveAt(Convert.ToInt32(index));
                 array = list.ToArray();
                 break;

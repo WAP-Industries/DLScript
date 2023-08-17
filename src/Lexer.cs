@@ -2,7 +2,6 @@
 using System.Text.RegularExpressions;
 using System.Data;
 using static System.Text.Json.JsonSerializer;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static DickLang.Compiler;
 
 class Lexer : DickLang.Compiler {
@@ -350,7 +349,7 @@ class Lexer : DickLang.Compiler {
         return false;
     }
 
-    private static string GetObjectString(string rawstring) {
+    protected internal static string GetObjectString(string rawstring) {
         char iden = '\uF483';
         string GetPropString(string str) {
             if (str[0] == '\"' && str[^1] == '\"')
@@ -387,16 +386,23 @@ class Lexer : DickLang.Compiler {
             return Error.RunTimeError("Reference", $"Index must be an integer");
 
         string StrValue = "";
-        object[] ArrayValue = Array.Empty<object>();
+        object[] Arr = Array.Empty<object>();
+        object ArrayValue=null;
         if (isArray)
-            ArrayValue = Deserialize<object[]>(Serialize(RawValue));
+            Arr = Deserialize<object[]>(Serialize(RawValue));
         else
             StrValue = Convert.ToString(RawValue);
 
-        if (Convert.ToInt64(Index) < 0 || Convert.ToInt64(Index) >= (isArray ? ArrayValue.Length : StrValue.Length))
+        if (Convert.ToInt64(Index) < 0 || Convert.ToInt64(Index) >= (isArray ? Arr.Length : StrValue.Length))
             return Error.RunTimeError("Reference", $"Index {Index} is out of bounds");
+
+        if (isArray) {
+            ArrayValue = Arr[Convert.ToInt64(Index)];
+            if (VarType == "object")
+                ArrayValue = GetObjectString(Serialize(ArrayValue));
+        }
     
-        string val = Convert.ToString(isArray ? ArrayValue[Convert.ToInt64(Index)] : StrValue[Convert.ToInt32(Index)]);
+        string val = Convert.ToString(isArray ? ArrayValue: StrValue[Convert.ToInt32(Index)]);
         return VarType == "string" ? $"\"{val}\"" : val;
     }
 
