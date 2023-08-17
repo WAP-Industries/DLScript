@@ -12,7 +12,7 @@ class Lexer : DickLang.Compiler {
         // replace variables
         FinalExpr = ReplaceVariable(Convert.ToString(FinalExpr), StrExpr);
         if (FinalExpr==null) return null;
-
+        
         // replace special keywords
         FinalExpr = ReplaceSpecialValues(Convert.ToString(FinalExpr), StrExpr);
 
@@ -106,7 +106,7 @@ class Lexer : DickLang.Compiler {
                 SubStr = "";
             }
             else if (i == Expr.Length - 1) {
-                bool Interp = StrExpr && !WithinInterpolate(Expr, i - 3);
+                bool Interp = StrExpr && !WithinInterpolate(Expr, i - 2);
                 if (Interp) break;
                 string Value = Expr.Substring(i-SubStr.Length, SubStr.Length).Trim() + Expr[i];
                 if (Keywords.SpecialValues.Keys.Contains(Value))
@@ -421,6 +421,9 @@ class Lexer : DickLang.Compiler {
             return Error.RunTimeError("Reference", $"Variable {VarName} does not contain the attribute {AttribName}");
         string Type = Convert.ToString(Attributes[AttribName]["Type"]);
         object value = Attributes[AttribName]["Value"];
+        if (Type.Contains("[]"))
+            value = GetArrayString(Deserialize<object[]>(Serialize(Attributes[AttribName]["Value"])));
+
         return Type=="string" ? $"\"{value}\"" : value;
     }
 

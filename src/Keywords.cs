@@ -315,7 +315,7 @@ class Keywords : DickLang.Compiler {
     };
 
     private static object GetVariable(string _name) {
-        string rawname = (_name as string).Trim();
+        string rawname = _name.Trim();
         string name = rawname.Substring(1);
         // check name
         if (new char[] { '%', '$' }.Where(i => rawname[0] == i).ToArray().Length == 0)
@@ -418,9 +418,9 @@ class Keywords : DickLang.Compiler {
                 string _type = Convert.ToString(_value);
                 ObjProperties.Add(
                     property, new() {
-                        { "Type", (object) _type.Replace("[]", "") },
+                        { "Type", _type.Replace("[]", "") },
                         { "ArrayType", _type.Contains("[]") ? _type.Replace("[]", "") : null },
-                        { "Value", DefaultValues[_type.Contains("[]") ? "array":_type] }
+                        { "Value", DefaultValues[_type.Contains("[]") ? "array":_type] },
                     }
                 );
                 break;
@@ -429,6 +429,7 @@ class Keywords : DickLang.Compiler {
         var TempDic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(rawname[0] == '$' ? Variables :
             Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"]));
         TempDic[name]["Properties"] = ObjProperties;
+        TempDic[name]["Attributes"] = SetAttribute(ObjProperties, "object");
 
         if (rawname[0] == '$')
             Keywords.Variables = TempDic;
@@ -602,6 +603,11 @@ class Keywords : DickLang.Compiler {
             AddAttribute("length", Deserialize<object[]>(Serialize(Value)).Length, "number");
         if (Type == "string")
             AddAttribute("length", Convert.ToString(Value).Length, "number");
+        if (Type == "object") {
+            string Keys = String.Join(">>", Deserialize<Dictionary<string, object>>(Serialize(Value)).Keys);
+            var finalvalue = Parser.SetArrayElems(new string[] { "string[]", "nig", Keys });
+            AddAttribute("properties", finalvalue, "string[]");
+        }
 
         AddAttribute("type", Type, "string");
         return Attributes;

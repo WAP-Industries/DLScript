@@ -1,8 +1,6 @@
 ﻿using System;
 using static System.Console;
-using System.Threading;
 using System.Diagnostics;
-using Microsoft.CodeAnalysis.Scripting.Hosting;
 
 namespace DickLang {
     class Compiler {

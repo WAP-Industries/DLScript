@@ -64,9 +64,8 @@ class Parser : DickLang.Compiler {
             }
 
             else {
-                var _ = CheckExpr(Tokens);
-                if (_ == null) return null;
-                var args = (string[])_;
+                string[]? args = (string[]) CheckExpr(Tokens);
+                if (args == null) return null;
 
                 if (
                     Keywords.DataTypes.Contains(Tokens[0]) &&
