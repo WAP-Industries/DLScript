@@ -1,0 +1,39 @@
+################################
+#          Data Types          #
+################################
+
+# DLScript has 3 primitive types - numbers, strings and booleans
+
+# numbers - encapsulate both integers and decimals
+number 8=D int 8=D 1236
+number 8=D deci 8=D 6.9
+
+# strings - sequence of characters
+string 8=D str 8=D Hello World!
+
+# booleans - exist in either a true or false state
+bool 8=D bool1 8=D true
+bool 8=D bool2 8=D false
+
+
+# DLScript also has 2 non-primitive types - arrays and objects
+
+# objects - container of key-value pairs
+object 8=D obj 8=D prop1: number <> prop2: string
+
+# arrays - container storing multiple values of the same data type
+number[] 8=D numarray 8=D 1>>2>>3
+string[] 8=D strarray 8=D n>>i>>g>>g>>e>>r
+bool[] 8=D boolarray 8=D true>>false
+object[] 8=D objarray 8=D $obj>>$obj
+
+
+################################
+#          Variables           #
+################################
+
+
+
+################################
+#      Variable Attributes     #
+################################
