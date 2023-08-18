@@ -643,7 +643,7 @@ class Keywords : DickLang.Compiler {
             AddAttribute("length", Convert.ToString(Value).Length, "number");
         if (Type == "object") {
             string Keys = String.Join(">>", Deserialize<Dictionary<string, object>>(Serialize(Value)).Keys);
-            var finalvalue = Parser.SetArrayElems(new string[] { "string[]", "nig", Keys });
+            var finalvalue = Parser.SetArrayElems(new string[] { "string[]", "nig", Keys.Length>0 ? Keys : "__empty__" });
             AddAttribute("properties", finalvalue, "string[]");
         }
 

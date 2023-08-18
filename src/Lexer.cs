@@ -2,8 +2,6 @@
 using System.Text.RegularExpressions;
 using System.Data;
 using static System.Text.Json.JsonSerializer;
-using static DickLang.Compiler;
-using Microsoft.CodeAnalysis.Scripting.Hosting;
 
 class Lexer : DickLang.Compiler {
     protected internal static object EvalExpr(string Expr, string[] Tokens, bool StrExpr, string LexType, bool CallError=true) {
@@ -52,7 +50,6 @@ class Lexer : DickLang.Compiler {
         }
         FinalExpr = Convert.ToString(FinalExpr).Replace("\uF483", "");
 
-        Console.WriteLine(FinalExpr);
         try {
             object result = EvaluateAsync(StrExpr ? $"$\"{FinalExpr}\"" : Convert.ToString(FinalExpr)).Result;
             if (LexType == "bool") {

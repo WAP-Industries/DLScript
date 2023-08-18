@@ -177,10 +177,8 @@ class Parser : DickLang.Compiler {
         switch (Type) {
             case "string":
                 return true;
-                break;
             case "number":
                 return CheckNumeric(Value) ? true : Error.CodeError("Type", $"Variable {Name} can only be assigned numeric values");
-                break;
             case "bool":
                 return new string[] { "True", "False" }.Contains(Value) ? true : Error.CodeError("Type", $"Variable {Name} can only be assigned boolean values");
             case "object":
