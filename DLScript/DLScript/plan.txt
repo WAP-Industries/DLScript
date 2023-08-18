@@ -1,0 +1,66 @@
+*Dicklang is a programming language aiming to solve
+the problem of existing language runtimes being too fast
+
+--Todo--
+*fixes
+	- cant add curly brace enclosed expressions to array
+		- exceptions: raw value interpolated (~[{{}}]~)
+
+
+--Complete--
+1. basic io
+2. data types and variables
+3. expression handling (basic variables and lexing)
+4. conditionals (no else statements)
+5. loops and control flow (while, break, continue)
+6. functions - declare, call, return, args
+7. arrays
+	- array
+		- declaration
+		- referencing
+		- destructuring
+		- empty array declaration
+		- passing into functions
+		- adding elements
+		- removing elements
+		- inserting elements
+	- elements
+		- referencing
+		- using expressions as indexes
+		- modifying elements
+
+8. string interpolation
+9. comments
+10. sleep function to delay execution
+11. runtime duration (to show how fucking slow this shit is)
+12. complete abortion of program
+13. objects
+	- declaring object variables
+	- declaring object function arguments
+	- referencing object properties
+	- mutating objects
+		- modifying properties
+		- setting array properties
+		- deleting properties
+		- adding properties
+	- declaring empty objects
+	- cloning objects
+	- passing objects into functions
+	- properties attribute (returns array containing all property names)
+	- array of objects
+		- declaring array of objects
+		- modifying object array elements
+		- passing into functions
+		- change array value such that elements are shown as object strings
+		- referencing object array elements (append 8=D $arr<>$objarr[0])
+		- referencing array element properties (cloning array elements of object type) 
+	- use variables as object property referencies
+14. special keywords
+	- mathematical constants (pi, e, golden ratio)
+	- __rnd__ (random number generator)
+15. Variable attributes
+	- setting default var attributes
+	- referencing var attributes
+	- auto modify var attributes
+16. STRING INDEXING (FORGOR)
+17. printing empty spaces
