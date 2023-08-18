@@ -10,8 +10,9 @@ class Lexer : DickLang.Compiler {
         // replace variables
         FinalExpr = ReplaceVariable(Convert.ToString(FinalExpr), StrExpr);
         if (FinalExpr==null) return null;
-        
+
         // replace special keywords
+
         FinalExpr = ReplaceSpecialValues(Convert.ToString(FinalExpr), StrExpr);
 
         // replace destructure
