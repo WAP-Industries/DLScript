@@ -365,17 +365,21 @@ class Lexer : DickLang.Compiler {
     }
 
     private static string GetArrayString(object[] val) {
-        object[] rawelems = (object[])val;
+        object[] rawelems = val;
         string elemstr = "";
         for (int i = 0; i < rawelems.Length; i++) {
             string elem = Convert.ToString(rawelems[i]);
+            try {
+                Deserialize<Dictionary<string, object>>(Serialize(rawelems[i]));
+                elem = GetObjectString(elem);
+            } catch { }
             elemstr += Convert.ToString(elem).Replace("\"", "\\\"");
             if (i < rawelems.Length - 1) elemstr += "\uF482";
         }
         return $"[{elemstr}]";
     }
 
-    private static object GetArrayElement(object RawValue, string VarName, string VarType, bool isArray) {
+    protected internal static object GetArrayElement(object RawValue, string VarName, string VarType, bool isArray, bool Raw = false) {
         string ArrName = VarName.Substring(0, VarName.IndexOf("["));
         int LastBrace = VarName.Length-1-Array.IndexOf(VarName.ToCharArray().Reverse().ToArray(), ']');
         object i = VarName.Substring(VarName.IndexOf("[") + 1, LastBrace-VarName.IndexOf("[")-1);
@@ -403,7 +407,7 @@ class Lexer : DickLang.Compiler {
         }
     
         string val = Convert.ToString(isArray ? ArrayValue: StrValue[Convert.ToInt32(Index)]);
-        return VarType == "string" ? $"\"{val}\"" : val;
+        return Raw ? ArrayValue : VarType == "string" ? $"\"{val}\"" : val;
     }
 
     private static object GetProperty(object RawDic, string VarName, string ObjName) {

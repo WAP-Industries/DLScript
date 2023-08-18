@@ -216,7 +216,7 @@ class Keywords : DickLang.Compiler {
                             value = Parser.SetArrayElems(new string[]{ type, "nig", Convert.ToString(value)});
                         }
                         else if (type == "object") {
-                            var res = Deserialize<object[]>(Serialize(GetVariable(_[i])));
+                            var res = Deserialize<object[]>(Serialize(GetVariable(_[i], "object")));
                             if (res == null) return null;
                             (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
                             var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
@@ -314,12 +314,12 @@ class Keywords : DickLang.Compiler {
         }
     };
 
-    private static object GetVariable(string _name, string Type="array") {
+    private static object GetVariable(string _name, string Type) {
         string rawname = _name.Trim();
         string name = rawname.Substring(1);
         // check name
         if (new char[] { '%', '$' }.Where(i => rawname[0] == i).ToArray().Length == 0)
-            return Error.RunTimeError("Syntax", $"An {Type} must be provided");
+            return Error.RunTimeError("Syntax", $"{_name} is not of type {Type}");
         if (rawname[0] == '%' && FunctionInfo["Name"] == null)
             return Error.RunTimeError("Syntax", "Cannot reference function arguments outside function block");
 
@@ -349,7 +349,7 @@ class Keywords : DickLang.Compiler {
         // get object properties and containers
         bool succeeded = true;
         (Dictionary<string, object>?, Dictionary<string, Dictionary<string, object>>?) GetObject(string objname) {
-            var res = Deserialize<object[]>(Serialize(GetVariable(objname)));
+            var res = Deserialize<object[]>(Serialize(GetVariable(objname, "object")));
             if (res == null) { succeeded = false; return (null, null); }
             (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
             var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
@@ -364,7 +364,7 @@ class Keywords : DickLang.Compiler {
         }
         if (!succeeded) return null;
         var (Obj1Coll, Obj1Properties) = GetObject(obj1_name);
-        var (Obj2Coll, Obj2Properties) = GetObject(obj2_name);
+        var Obj2Properties = GetObjectProperties(obj2_name);
 
 
         // clone object
@@ -381,7 +381,7 @@ class Keywords : DickLang.Compiler {
     }
 
     private static object ModifyObject(object _name, string property, string _value, string mode) {
-        var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name))));
+        var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name), "object")));
         if (res == null) return null;
         (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
         var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
@@ -453,8 +453,29 @@ class Keywords : DickLang.Compiler {
         return true;
     }
 
+    private static object GetObjectProperties(string name) {
+        if (Lexer.HasIndex(Convert.ToString(name))) {
+            string ArrName = name.Substring(0, name.IndexOf("[")).Trim();
+            string VarName = ArrName.Substring(1);
+            var arrres = Deserialize<object[]>(Serialize(GetVariable(ArrName, "array")));
+            if (arrres == null) return null;
+            (string _, string _, object _ArrColl) = (Convert.ToString(arrres[0]), Convert.ToString(arrres[1]), arrres[2]);
+            var ArrColl = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(_ArrColl));
+            object Properties = Lexer.GetArrayElement(ArrColl[VarName]["Value"], Convert.ToString(name),
+                                            Convert.ToString(ArrColl[VarName]["Type"]), true, true);
+            return Deserialize<Dictionary<string, object>>(Serialize(Properties));
+        } 
+        else {
+            var objres = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(name), "object")));
+            if (objres == null) return null;
+            (string _, string ObjName, object _ObjColl) = (Convert.ToString(objres[0]), Convert.ToString(objres[1]), objres[2]);
+            var ObjColl = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(_ObjColl));
+            return ObjColl[ObjName]["Properties"];
+        }
+    }
+
     private static object ModifyArray(object _name, object _index, object _value, string mode) {
-        var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name))));
+        var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name), "array")));
         if (res == null) return null;
         (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
         var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
@@ -484,13 +505,8 @@ class Keywords : DickLang.Compiler {
 
         object value = null;
         if (mode != "pop") {
-            if (arrtype == "object") {
-                var objres = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_value))));
-                if (objres == null) return null;
-                (string _, string ObjName, object _ObjColl) = (Convert.ToString(objres[0]), Convert.ToString(objres[1]), objres[2]);
-                var ObjColl = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(_ObjColl));
-                value = ObjColl[ObjName]["Properties"];
-            }
+            if (arrtype == "object")
+                value = GetObjectProperties(Convert.ToString(_value));
             else
                 value = Lexer.EvalExpr(Convert.ToString(_value), new string[] { "set" }, arrtype == "string", arrtype);
             if (value == null) return null;
