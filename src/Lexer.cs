@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using System.Data;
 using static System.Text.Json.JsonSerializer;
 using static DickLang.Compiler;
+using Microsoft.CodeAnalysis.Scripting.Hosting;
 
 class Lexer : DickLang.Compiler {
     protected internal static object EvalExpr(string Expr, string[] Tokens, bool StrExpr, string LexType, bool CallError=true) {
@@ -51,6 +52,7 @@ class Lexer : DickLang.Compiler {
         }
         FinalExpr = Convert.ToString(FinalExpr).Replace("\uF483", "");
 
+        Console.WriteLine(FinalExpr);
         try {
             object result = EvaluateAsync(StrExpr ? $"$\"{FinalExpr}\"" : Convert.ToString(FinalExpr)).Result;
             if (LexType == "bool") {
@@ -67,9 +69,11 @@ class Lexer : DickLang.Compiler {
                     DataTable table = new DataTable();
                     table.Compute(Convert.ToString(FinalExpr), "");
                     return CallError ? Error.CodeError("Type", ErrMsg) : null;
-                } catch (OverflowException) {
+                } 
+                catch (OverflowException) {
                     return CallError ? Error.CodeError("Overflow", $"Numeric overflow {FinalExpr}") : null;
-                } catch {
+                } 
+                catch {
                     return CallError ? Error.CodeError("Type", ErrMsg) : null;
                 }
             }
@@ -121,6 +125,7 @@ class Lexer : DickLang.Compiler {
         List<KeyValuePair<int, string>> VarRef = new();
 
         for (int s = 0; s < Expr.Length; s++) {
+            if (new char[]{ '$', '%'}.Contains(Expr[s]) && s>0 && Expr[s-1]==':') continue;
             if (Expr[s] == '$') VarRef.Add(new KeyValuePair<int, string>(s, "Variable"));
             if (Expr[s] == '%') {
                 if (FunctionInfo["Name"] == null)
@@ -412,7 +417,8 @@ class Lexer : DickLang.Compiler {
 
     private static object GetProperty(object RawDic, string VarName, string ObjName) {
         var PropDic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(RawDic));
-        string propname = VarName.Substring(VarName.IndexOf("::") + 2);
+        string propname = VarName.Substring(VarName.IndexOf("::") + 2).Trim();
+        propname = Convert.ToString(EvalExpr($"~[{propname}]~", new string[] { "nig" }, true, "string"));
         if (!PropDic.Keys.Contains(propname))
             return Error.RunTimeError("Reference", $"Object {ObjName} does not contain property {propname}");
         string val = Convert.ToString(PropDic[propname]["Value"]);
