@@ -160,6 +160,8 @@ class Parser : DickLang.Compiler {
     }
 
     protected internal static object CheckName(string Name, string TokenType) {
+        if (Name.Trim().Length == 0)
+            return Error.CodeError("Syntax", $"{TokenType} name cannot be empty");
         if (new Regex(@"[`!@#$%^&*()_+\-=\[\]{};':""\\|,.<>\/?~]").Matches(Convert.ToString(Name[0])).Count > 0)
             return Error.CodeError("Syntax", $"{TokenType} name cannot contain special characters");
         if (new Regex("[0-9]").Matches(Convert.ToString(Name[0])).Count > 0)
