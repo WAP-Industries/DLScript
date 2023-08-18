@@ -8,7 +8,7 @@ namespace DickLang {
         protected internal static Stopwatch Timer = new Stopwatch();
         private protected static int LineNumber = 0;
         private protected static string[] CurrentCode;
-        private protected static KeyValuePair<int, int> LoopInfo = new(-1, -1);
+        private protected static List<KeyValuePair<int, int>> LoopInfo = new();
         private protected static Dictionary<string, object> FunctionInfo = new() {
             { "Name",  null },
             { "Start", -1 },
@@ -80,8 +80,8 @@ namespace DickLang {
                         }
 
                         if (!Run(Lines[LineNumber])) break;
-                        if (LineNumber == LoopInfo.Value) {
-                            LineNumber = LoopInfo.Key;
+                        if (LoopInfo.Count()>0 && LineNumber == LoopInfo[^1].Value) {
+                            LineNumber = LoopInfo[^1].Key;
                             continue;
                         }
                         if (LineNumber == (int)FunctionInfo["End"])
@@ -116,7 +116,7 @@ namespace DickLang {
             LineNumber = 0;
             Keywords.Variables = new();
             Keywords.Methods = new();
-            LoopInfo = new(-1, -1);
+            LoopInfo = new();
             FunctionInfo = new() {
                 { "Name",  null},
                 { "Start", -1 },

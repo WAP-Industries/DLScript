@@ -115,11 +115,12 @@ class Keywords : DickLang.Compiler {
                 {
                     if (!CheckBlockSpan(parameters[1], "while")) return null;
                     SetFutureError(parameters[1]);
-                    LoopInfo = new KeyValuePair<int, int>(LineNumber, LineNumber+(int)parameters[1]);
+                    if (!SearchLoopInfo(LineNumber, LineNumber+(int)parameters[1]))
+                        LoopInfo.Add(new KeyValuePair<int, int>(LineNumber, LineNumber+(int)parameters[1]));
                     if (Serialize(parameters[0]) == "false")
                     {
-                        LineNumber = LoopInfo.Value;
-                        LoopInfo = new KeyValuePair<int, int>(-1, -1);
+                        LineNumber = LoopInfo[^1].Value;
+                        LoopInfo.RemoveAt(LoopInfo.Count()-1);
                         return true;
                     }
                     return true;
@@ -132,7 +133,7 @@ class Keywords : DickLang.Compiler {
                 (parameters) =>
                 {
                     if (InLoop("break")){
-                        LoopInfo = new KeyValuePair<int, int>(-1, -1);
+                        LoopInfo.RemoveAt(LoopInfo.Count()-1);
                         return true;
                     }
                     return null;
@@ -145,7 +146,7 @@ class Keywords : DickLang.Compiler {
                 (parameters) =>
                 {
                     if (InLoop("continue")){
-                        LineNumber = LoopInfo.Key;
+                        LineNumber = LoopInfo[^1].Key;
                         return true;
                     }
                     return null;
@@ -594,7 +595,7 @@ class Keywords : DickLang.Compiler {
     }
 
     private static bool InLoop(string name) {
-        return LoopInfo.Key == -1 ?
+        return LoopInfo[^1].Key == -1 ?
             Convert.ToBoolean(Error.RunTimeError("Syntax", $"Illegal {name} statement")) : true;
     }
 
@@ -649,5 +650,11 @@ class Keywords : DickLang.Compiler {
 
         AddAttribute("type", Type, "string");
         return Attributes;
+    }
+
+    private static bool SearchLoopInfo(int a, int b) {
+        foreach (var pair in LoopInfo)
+            if (pair.Key == a && pair.Value == b) return true;
+        return false;
     }
 }
