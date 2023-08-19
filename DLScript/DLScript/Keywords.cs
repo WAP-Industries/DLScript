@@ -1,8 +1,8 @@
-﻿using System;
-using static System.Text.Json.JsonSerializer;
-using DickLang;
-using System.Text.RegularExpressions;
+﻿using DickLang;
 using System.Data;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+using static System.Text.Json.JsonSerializer;
 
 struct TokenInfo {
     public string[] Pattern, Args;
@@ -220,7 +220,7 @@ class Keywords : DickLang.Compiler {
                             var res = Deserialize<object[]>(Serialize(GetVariable(_[i], "object")));
                             if (res == null) return null;
                             (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
-                            var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+                            var Coll = ConvertCollection(_Coll);
                             Properties = Deserialize<Dictionary<string, Dictionary<string, object>>>(
                                                     Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
                             value = DefaultValues["object"];
@@ -238,8 +238,8 @@ class Keywords : DickLang.Compiler {
                     }
 
                     var lines = ((int[])(Methods[parameters[0] as string]["Lines"]));
-                    FunctionInfo["Start"] = (object) LineNumber;
-                    FunctionInfo["End"] = (object) lines[1];
+                    FunctionInfo["Start"] = LineNumber;
+                    FunctionInfo["End"] = lines[1];
                     FunctionInfo["Name"] = parameters[0] as string;
                     LineNumber = lines[0];
                     return true;
@@ -312,8 +312,38 @@ class Keywords : DickLang.Compiler {
                 (parameters)=>
                     Convert.ToBoolean(CloneObject(Convert.ToString(parameters[0]), Convert.ToString(parameters[1])))
             )
+        },
+
+        // data type stuff
+        {
+            "cast", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string", "string"}),
+                (parameters)=>
+                    Convert.ToBoolean(TypeCast(Convert.ToString(parameters[0]), Convert.ToString(parameters[1])))
+            )
+        },
+        {
+            "round", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args" }, new string[]{"string", "number"}),
+                (parameters) => {
+                    string VarName = Convert.ToString(parameters[0]);
+                    if (!Variables.Keys.Contains(VarName))
+                        return Convert.ToBoolean(Error.RunTimeError("Reference", $"Variable {VarName} does not exist"));
+                    if (Convert.ToString(Variables[VarName]["Type"])!="number")
+                        return Convert.ToBoolean(Error.RunTimeError("Type", $"Cannot round {VarName} of non-number type"));
+                    if (!Int32.TryParse(Convert.ToString(parameters[1]), out int _))
+                        return Error.RunTimeError("Type", "Number of decimal places must be an integer");
+
+                    return Convert.ToBoolean(
+                        Variables[VarName]["Value"] = Math.Round(Convert.ToDecimal(Variables[VarName]["Value"]), Convert.ToInt32(parameters[1]))
+                    );
+                }
+            )
         }
     };
+
+    private static Dictionary<string, object> ConvertCollection(object Coll) =>
+        Deserialize<Dictionary<string, object>>(Serialize(Coll));
 
     private static object GetVariable(string _name, string Type) {
         string rawname = _name.Trim();
@@ -332,6 +362,88 @@ class Keywords : DickLang.Compiler {
         return new object[] { rawname, name, Coll };
     }
 
+    private static object TypeCast(string VarName, string Type) {
+
+        // getting json element primitive type
+        object GetJsonValue(JsonElement element) {
+            switch (element.ValueKind) {
+                case JsonValueKind.Number:
+                    return element.TryGetInt32(out int _) ? element.GetInt32() : element.GetDecimal();
+                case JsonValueKind.True:
+                case JsonValueKind.False:
+                    return element.GetBoolean();
+                default:
+                    return element.GetString();
+            }
+        }
+
+        // casting individual elements in array
+        object[]? CastArray(object[] UArray, string CastType) {
+            List<object> CArray = new();
+            foreach (JsonElement value in UArray) {
+                object CValue = CastValue(GetJsonValue(value), CastType);
+                if (CValue == null) return null;
+                CArray.Add(CValue);
+            }
+            return CArray.ToArray();
+        }
+
+        // casting values
+        object CastValue(object UCValue, string CastType) {
+            object CValue = null;
+            try {
+                switch (CastType) {
+                    case "string":
+                        CValue = Convert.ToString(UCValue);
+                        break;
+                    case "number":
+                        CValue = Int32.TryParse(Convert.ToString(UCValue), out int _) ? Convert.ToInt32(UCValue) : Convert.ToDecimal(UCValue);
+                        break;
+                    case "bool":
+                        CValue = Convert.ToBoolean(UCValue);
+                        break;
+                }
+                return CValue;
+            } catch {
+                return null;
+            }
+        }
+
+        if (!Variables.Keys.Contains(VarName))
+            return Error.RunTimeError("Reference", $"Variable {VarName} does not exist");
+        if (!Keywords.PropertyTypes.Contains(Type))
+            return Error.RunTimeError("Type", $"{Type} is not a valid conversion type");
+
+        object UCValue = Keywords.Variables[VarName]["Value"];
+        string IType = Convert.ToString(Keywords.Variables[VarName]["Type"]);
+
+        object CValue=null;
+        switch (Type) {
+            case "string":
+            case "number":
+            case "bool":
+                CValue = CastValue(UCValue, Type);
+                break;
+
+            case "string[]":
+            case "number[]":
+            case "bool[]":
+                CValue = CastArray(Deserialize<object[]>(Serialize(UCValue)).ToArray(), Type.Replace("[]", ""));
+                break;
+        }
+        if (CValue == null) return Error.RunTimeError("Type", $"Invalid conversion of ${VarName} from {IType} to {Type}");
+
+
+        Variables[VarName] = new Dictionary<string, object>(){
+            { "Type", Type },
+            { "ArrayType", Type.Contains("[]") ? Type.Replace("[]", "") : null },
+            { "Properties", null},
+            {"Value", CValue},
+            { "Attributes", Keywords.SetAttribute(CValue, Type) }
+        };
+        return true;
+    }
+
     protected internal static Dictionary<string, Dictionary<string, object>>? GetArgObject(string RawName) {
         try {
             return Deserialize<Dictionary<string, Dictionary<string, object>>>(RawName);
@@ -340,7 +452,7 @@ class Keywords : DickLang.Compiler {
             var res = Deserialize<object[]>(Serialize(Keywords.GetVariable(RawName, "object")));
             if (res == null) return null;
             (string _, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
-            var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+            var Coll = ConvertCollection(_Coll);
             return Deserialize<Dictionary<string, Dictionary<string, object>>>(
                     Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
         }
@@ -353,7 +465,7 @@ class Keywords : DickLang.Compiler {
             var res = Deserialize<object[]>(Serialize(GetVariable(objname, "object")));
             if (res == null) { succeeded = false; return (null, null); }
             (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
-            var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+            var Coll = ConvertCollection(_Coll);
             var ObjProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(
                                     Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
             if (ObjProperties == null) {
@@ -385,7 +497,7 @@ class Keywords : DickLang.Compiler {
         var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name), "object")));
         if (res == null) return null;
         (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
-        var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+        var Coll = ConvertCollection(_Coll);
         var ObjProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(
                                 Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
         if (ObjProperties == null)
@@ -479,7 +591,7 @@ class Keywords : DickLang.Compiler {
         var res = Deserialize<object[]>(Serialize(GetVariable(Convert.ToString(_name), "array")));
         if (res == null) return null;
         (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
-        var Coll = Deserialize<Dictionary<string, object>>(Serialize(_Coll));
+        var Coll = ConvertCollection(_Coll);
         
         object[] array; 
         Dictionary<string, object> variable;
