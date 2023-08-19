@@ -2,7 +2,7 @@
 #       The Interpreter        #
 ################################
 
-# 1. Run a code file by simply entering the absolute file path
+# Run a code file by simply entering the absolute file path
 # Only files with the .dlscript extension can be passed in
 
 # DLScript Interpreter
@@ -11,7 +11,7 @@
 # >>> **file path**
 
 
-# 2. Additional commands
+# Additional commands
 
 # __cls__ - Clears the current console output
 # __quit__ - Exits the interpreter
@@ -24,21 +24,21 @@
 
 # DLScript syntax is relatively simple
 
-# 1. keywords are separated by the 8=D identifier
+# Keywords are separated by the 8=D identifier
 print 8=D Hello World!
 number 8=D num 8=D 9087
 
 
-# 2. Arguments are separated by the <> identifier
+# Arguments are separated by the <> identifier
 number[] 8=D array 8=D __empty__
 append 8=D $array<>129
 
 
-# 3. The interpreter interpretes the complete line, so each line can only contain 1 function
+# The interpreter interpretes the complete line, so each line can only contain 1 function
 
 # this will throw an error if run
 print 8=D Hello print 8=D 
 World!
 
-# 4. Comments are added by starting a line with the # identifier
+# Comments are added by starting a line with the # identifier
 # this is a comment
