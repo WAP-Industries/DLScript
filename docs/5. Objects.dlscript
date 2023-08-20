@@ -1,0 +1,91 @@
+################################
+#          Declaration         #
+################################
+
+# Properties can be immediately declared by passing them as arguments
+# Properties declared will be assigned default values
+# Properties are declared following the format *property name*:*property type*
+
+# declares an object with the property "x" of number type
+object 8=D obj 8=D x:number
+
+
+# Alternatively, empty objects can be declared with the "__empty__" keyword
+object 8=D obj 8=D __empty__
+
+
+
+################################
+#    Referencing Properties    #
+################################
+
+# Object properties are referenced with the "::" identifier
+
+object 8=D obj 8=D x:number
+print 8=D ~[$obj::x]~
+# outputs "0"
+
+
+# String variables can also be used as property references
+
+object 8=D obj 8=D y:bool
+string 8=D prop 8=D y
+print 8=D ~[$obj::$prop]~
+# outputs "True"
+
+
+
+################################
+#      Function Arguments      #
+################################
+
+# Unlike arrays, objects can be passed directly into functions
+
+function 8=D func 8=D o: object <> 1
+	print 8=D ~[%o]~
+
+object 8=D obj 8=D a: bool
+call 8=D func 8=D $obj
+
+
+
+################################
+#           Cloning            #
+################################
+
+# Unlike arrays, it is not possible to destructure objects when cloning variables
+# Instead, the "clone" function can be used
+# Syntax: clone 8=D *existing object variable*<>*object to be cloned*
+
+object 8=D obj1 8=D x:number
+object 8=D obj2 8=D __empty__
+clone 8=D $obj2<>$obj1
+# obj2 inherits the properties of obj1
+
+
+
+################################
+#          Modifying           #
+################################
+
+# DLScript provides a few functions to modify object properties
+
+# "modify" function
+# Syntax: modify 8=D *object variable*
+
+
+# "add" function
+
+
+# "remove" function
+
+
+################################
+#         Object Arrays        #
+################################
+
+
+
+################################
+#          Attributes          #
+################################
