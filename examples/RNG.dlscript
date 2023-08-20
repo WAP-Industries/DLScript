@@ -1,3 +1,5 @@
+# a program that generates random numbers between a user-inputed range
+
 function 8=D RNG 8=D lbound: number <> ubound: number <> 7
 	if 8=D %lbound>%ubound <> 2
 		print 8=D Invalid range
