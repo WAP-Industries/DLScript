@@ -479,7 +479,7 @@ class Keywords : DickLang.Compiler {
                                     Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
             if (ObjProperties == null) {
                 succeeded = false;
-                Error.RunTimeError("Type", $"Cannot modify variable {name} of non-object type");
+                Error.RunTimeError("Type", $"Cannot modify {rawname} of non-object type");
                 return (null, null);
             }
             return (Coll, ObjProperties);
@@ -510,11 +510,11 @@ class Keywords : DickLang.Compiler {
         var ObjProperties = Deserialize<Dictionary<string, Dictionary<string, object>>>(
                                 Serialize(Deserialize<Dictionary<string, object>>(Serialize(Coll[name]))["Properties"]));
         if (ObjProperties == null)
-            return Error.RunTimeError("Type", $"Cannot modify variable {name} of non-object type");
+            return Error.RunTimeError("Type", $"Cannot modify {rawname} of non-object type");
 
         // check property
         if (!ObjProperties.Keys.Contains(property) && mode!="add")
-            return Error.RunTimeError("Reference", $"Object {name} does not contain property {property}");
+            return Error.RunTimeError("Reference", $"Object {rawname} does not contain property {property}");
 
 
         // check value
