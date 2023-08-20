@@ -34,12 +34,10 @@ namespace DickLang {
                 string input = ReadLine().Trim();
 
                 // console commands
-                if (input == "__quit__") 
+                if (input == "__quit__")
                     return;
-                else if (input == "__cls__") {
+                else if (input == "__cls__")
                     Clear();
-                    WriteLine(StartUpMsg);
-                }
 
                 // executing code files
                 else {
@@ -51,15 +49,14 @@ namespace DickLang {
                         WriteLine("No file provided");
                         continue;
                     }
-                    try { 
+                    try {
                         Lines = CurrentCode = File.ReadAllLines(input);
 
                         if (ReverseString(input).IndexOf(ReverseString(".dlscript")) != 0) {
                             WriteLine("Invalid file extension, can only run .dlscript files");
                             continue;
                         }
-                    }
-                    catch {
+                    } catch {
                         WriteLine($"Invalid file path: {input}");
                         continue;
                     }
@@ -70,7 +67,7 @@ namespace DickLang {
                         if (LineNumber < 0 || LineNumber >= Lines.Length) break;
 
                         // future error
-                        if (Lines[LineNumber].Trim().Length == 0 || Lines[LineNumber].Trim()[0]=='#') { LineNumber++; continue; }
+                        if (Lines[LineNumber].Trim().Length == 0 || Lines[LineNumber].Trim()[0] == '#') { LineNumber++; continue; }
                         if (Convert.ToInt32(FutureErrorLine?["Line"]) != -1) {
                             if (Convert.ToInt32(LineNumber) == Convert.ToInt32(FutureErrorLine["Line"])) {
                                 string[] err = (string[])FutureErrorLine["Error"];
@@ -80,7 +77,7 @@ namespace DickLang {
                         }
 
                         if (!Run(Lines[LineNumber])) break;
-                        if (LoopInfo.Count()>0 && LineNumber == LoopInfo[^1].Value) {
+                        if (LoopInfo.Count() > 0 && LineNumber == LoopInfo[^1].Value) {
                             LineNumber = LoopInfo[^1].Key;
                             continue;
                         }
