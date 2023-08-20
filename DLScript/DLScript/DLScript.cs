@@ -1,6 +1,7 @@
 ﻿using System;
 using static System.Console;
 using System.Diagnostics;
+using System.Runtime.ExceptionServices;
 
 namespace DickLang {
     class Compiler {
@@ -109,10 +110,41 @@ namespace DickLang {
         }
 
         private static void Init() {
+            string? GetDir() {
+                var directoryInfo = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+                while (directoryInfo != null) {
+                    if (directoryInfo.GetFiles("*.sln").Length > 0)
+                        return @$"{directoryInfo.FullName}\DLScript";
+                    directoryInfo = directoryInfo.Parent;
+                }
+                return null;
+            }
+
+            // associate dlscript logo
+            WriteLine("Setting icons...");
+            try {
+                string? CurrDir = GetDir();
+                if (CurrDir == null) throw new Exception();
+
+                Process.Start(
+                    new ProcessStartInfo {
+                        FileName = @$"{CurrDir}\assoc.bat",
+                        Verb = "runas",
+                        UseShellExecute = true
+                    }
+                );
+
+            } catch {
+                Clear(); 
+                WriteLine("Failed to set file icons");
+            }
+            
             // expr parser tends to be slow on the 1st run
-            Interpreter.Interprete(new string[] { "print", "nigger" });
+            Interpreter.Interprete(new string[] { "print", "Setting up..." });
             Clear();
         }
+
         private static void ResetCompiler() {
             LineNumber = 0;
             Keywords.Variables = new();
