@@ -1,4 +1,5 @@
 ﻿using DickLang;
+using System;
 using System.Data;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -335,21 +336,53 @@ class Keywords : DickLang.Compiler {
             "round", new Keyword(
                 new TokenInfo(new string[]{"keyword", "args" }, new string[]{"string", "number"}),
                 (parameters) => {
-                    string VarName = Convert.ToString(parameters[0]);
-                    if (!Variables.Keys.Contains(VarName))
-                        return Convert.ToBoolean(Error.RunTimeError("Reference", $"Variable {VarName} does not exist"));
-                    if (Convert.ToString(Variables[VarName]["Type"])!="number")
-                        return Convert.ToBoolean(Error.RunTimeError("Type", $"Cannot round {VarName} of non-number type"));
-                    if (!Int32.TryParse(Convert.ToString(parameters[1]), out int _))
-                        return Error.RunTimeError("Type", "Number of decimal places must be an integer");
+                    var res = Deserialize<object[]>(Serialize(Keywords.GetVariable(Convert.ToString(parameters[0]), "number")));
+                    if (res == null) return null;
+                    (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
 
-                    return Convert.ToBoolean(
-                        Variables[VarName]["Value"] = Math.Round(Convert.ToDecimal(Variables[VarName]["Value"]), Convert.ToInt32(parameters[1]))
-                    );
+                    if (!Int32.TryParse(Convert.ToString(parameters[1]), out int _))
+                        return Convert.ToBoolean(Error.RunTimeError("Type", "Number of decimal places must be an integer"));
+
+                    var variable = Deserialize<Dictionary<string, object>>(Serialize(ConvertCollection(_Coll)[name]));
+                    if (Convert.ToString(variable["Type"])!="number")
+                        return Convert.ToBoolean(Error.RunTimeError("Type", $"Cannot round {rawname} of non-number type"));
+
+                    var value = Math.Round(Convert.ToDecimal(GetJsonValue((JsonElement) variable["Value"])),
+                                            Convert.ToInt32(Convert.ToString(parameters[1])));
+
+                    var tempdic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(rawname[0] == '$' ? Variables :
+                    Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"]));
+                    tempdic[name] = new Dictionary<string, object>(){
+                        { "Type", variable["Type"] },
+                        { "ArrayType", variable["ArrayType"] },
+                        { "Properties", variable["Properties"] },
+                        { "Value",  value},
+                        { "Attributes", SetAttribute(value, Convert.ToString(variable["Type"])) }
+                    };
+
+                    if (rawname[0]=='$')
+                        Keywords.Variables = tempdic;
+                    else
+                        Keywords.Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"] = tempdic;
+
+                    return true;
                 }
             )
         }
     };
+
+    // getting json element primitive type
+    private static object GetJsonValue(JsonElement element) {
+        switch (element.ValueKind) {
+            case JsonValueKind.Number:
+                return element.TryGetInt32(out int _) ? element.GetInt32() : element.GetDecimal();
+            case JsonValueKind.True:
+            case JsonValueKind.False:
+                return element.GetBoolean();
+            default:
+                return element.GetString();
+        }
+    }
 
     private static Dictionary<string, object> ConvertCollection(object Coll) =>
         Deserialize<Dictionary<string, object>>(Serialize(Coll));
@@ -372,19 +405,6 @@ class Keywords : DickLang.Compiler {
     }
 
     private static object TypeCast(string VarName, string Type) {
-
-        // getting json element primitive type
-        object GetJsonValue(JsonElement element) {
-            switch (element.ValueKind) {
-                case JsonValueKind.Number:
-                    return element.TryGetInt32(out int _) ? element.GetInt32() : element.GetDecimal();
-                case JsonValueKind.True:
-                case JsonValueKind.False:
-                    return element.GetBoolean();
-                default:
-                    return element.GetString();
-            }
-        }
 
         // casting individual elements in array
         object[]? CastArray(object[] UArray, string CastType) {
