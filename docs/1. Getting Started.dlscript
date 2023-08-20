@@ -42,3 +42,28 @@ World!
 
 # Comments are added by starting a line with the # identifier
 # this is a comment
+
+
+
+################################
+#           Code Flow          #
+################################
+
+# DLScript provides some functions to control the system
+
+# "cls"
+# Clears all current output in the command line
+# Syntax: cls
+
+
+# "sleep" function
+# halts the current code for the specified time interval
+# Syntax: sleep 8=D *time in seconds*
+
+sleep 8=D 0.5
+# halts the program for half a second
+
+
+# "abort" function
+# Completely stops and exits the current program
+# Syntax: abort

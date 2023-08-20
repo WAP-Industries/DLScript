@@ -34,6 +34,7 @@ object[] 8=D objarray 8=D $obj>>$obj
 #          Variables           #
 ################################
 
+# All variables that are declared are global by default
 # The general syntax for declaring variables is *data type* 8=D *variable name* 8=D *value*
 
 # declares a string variable called "str" with the value "Hello World!"
@@ -70,11 +71,22 @@ number[] 8=D numarray 8=D __empty__
 object 8=D obj 8=D __empty__
 
 
-# It is possible to override a variable's type so long as the variable declaration is valid
 
-number 8=D var 8=D 7986
-string 8=D var 8=D thisisastring
-# the variable "var" turns from a number to a string type
+################################
+#         Type Casting         #
+################################
+
+# Type casting allows you to modify a variable's data type
+# The general syntax is cast 8=D *variable name*<>*conversion type*
+# Type casting will work so long as the explicit conversion is valid
+
+# converts the number to a boolean with the value "1"
+number 8=D num 8=D 123
+cast 8=D num<>bool
+
+# converts the number array to a boolean array
+number[] 8=D numarray 8=D 1>>0>>3123
+cast 8=D numarray<>bool[]
 
 
 

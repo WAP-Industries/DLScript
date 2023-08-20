@@ -1,0 +1,74 @@
+################################
+#          Declaration         #
+################################
+
+# Elements can be immediately placed into arrays by separating them with the ">>" identifier
+number[] 8=D numarray 8=D 1>>2>>3
+
+# Alternatively, if you wish to create an empty array, use the "__empty__" keyword
+string[] 8=D strarray 8=D __empty__
+
+
+
+################################
+#           Indexing           #
+################################
+
+# Individual elements of an array can be accessed by applying indexing
+# Note that expressions can be used to substitute hard-coded values
+
+number[] 8=D numarray 8=D 1>>2>>3
+print 8=D ~[$numarray[0]]~
+# outputs "1"
+
+
+
+################################
+#           Modifying          #
+################################
+
+# "append" function
+# Adds a new value to the back of the array
+# Syntax: append 8=D *array*<>*value*
+
+number[] 8=D arr 8=D 1
+append 8=D $arr<>2
+
+
+# "pop" function
+# Removes the value at the specified index
+# Syntax: remove 8=D *array*<>*index*
+
+number[] 8=D arr 8=D 1
+pop 8=D $arr<>0
+
+
+# "insert" function
+# Inserts a value into an array at the specified index
+# Syntax: insert 8=D *array*<>*index*<>*value*
+
+number[] 8=D arr 8=D 1>>2
+insert 8=D $arr<>1<>69
+# inserts value "69" at index 1
+
+
+# "set" function
+# Changes the value at the specified index
+# Syntax: set 8=D *array*<>*index*<>*value*
+
+number[] 8=D arr 8=D 1>>2
+set 8=D $arr<>0<>3
+# sets index 0 to "3"
+
+
+
+################################
+#         Destructuring        #
+################################
+
+# Arrays can also be destructured using the "..." operator
+# this is essential when passing arrays into functions (will be covered in subsequent docs)
+# additionally, this can come in handy when cloning array variables
+
+number[] 8=D numarr1 8=D 1>>2>>3
+number[] 8=D numarr2 8=D ...$numarr1

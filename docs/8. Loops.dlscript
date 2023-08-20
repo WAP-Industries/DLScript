@@ -1,0 +1,30 @@
+################################
+#            Loops             #
+################################
+
+# DLScript provides while loops to loop through code blocks
+# Syntax: while 8=D *condition*<>*line span*
+# Line span rules were previously covered in Part 7 of the docs on conditionals
+# Note that loops can also be nested (Refer to https://github.com/WAP-Industries/DLScript/blob/main/examples/Triangle.dlscript)
+
+# creating an infinite loop
+number 8=D count 8=D 0
+while 8=D true<>1
+	print 8=D thisisaloop
+
+
+
+################################
+#         Control Flow         #
+################################
+
+# There are a few functions you can use to control the behaviour of a loop
+
+# "continue" keyword
+# Skips to the next iteration of the loop
+# Syntax: continue
+
+
+# "break" keyword
+# Completely exits the loop
+# Syntax: break
