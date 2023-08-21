@@ -1,0 +1,69 @@
+################################
+#          Declaration         #
+################################
+
+# Functions are blocks of code that are only run when invoked
+# All functions are global by default on declaration
+
+# Simple functions can be declared as such
+# Syntax: function 8=D *function name* 8=D *line span*
+# Line span rules were previously covered in Part 7 of the docs on conditionals
+
+function 8=D func 8=D 1
+	print 8=D Function called
+
+
+# Functions with parameters can be called as such 
+# Syntax: function 8=D *param name*:*param type* <> *line span*
+# Note that functions can have any number of parameters
+
+function 8=D func 8=D a: number <> 1
+	print 8=D Function called
+
+
+
+################################
+#          Invocation          #
+################################
+
+# Functions are invoked with the "call" keyword
+# Syntax: call 8=D *function name* 8=D *param values (optional)*
+
+function 8=D func 8=D a: number <> 1
+	print 8=D Function called
+
+call 8=D func 8=D 1
+
+
+
+################################
+#      Function Arguments      #
+################################
+
+
+# Function arguments are accessed with the "%" prefix
+
+function 8=D func 8=D a: number <> 1
+	print 8=D ~[%a]~
+
+call 8=D func 8=D 69
+# passes 69 into the function and outputs "69"
+
+
+# Note that to pass array type values into functions, destructuring is required
+
+function 8=D func 8=D arr: number[] <> 1
+	print 8=D ~[%arr]~
+
+number[] 8=D arr 8=D 1>>2>>3
+call 8=D func 8=D ...$arr
+# passes the destructured array into the function
+
+
+
+################################
+#            Exiting           #
+################################
+
+# Functions can be exited using the "return" function
+# Syntax: return

@@ -1,0 +1,19 @@
+# a program that generates random numbers between a user-inputed range
+
+function 8=D RNG 8=D lbound: number <> ubound: number <> 6
+	if 8=D %lbound>%ubound <> 2
+		print 8=D Invalid range\n
+		return
+	number 8=D num 8=D __rnd__*%ubound+%lbound
+	round 8=D $num<>0
+	print 8=D Random number between ~[%lbound]~ and ~[%ubound]~: ~[$num]~\n
+
+
+while 8=D true <> 7
+	print 8=D Enter lbound:~[ ]~
+	number 8=D l 8=D __input__
+	cls
+	print 8=D Enter ubound:~[ ]~
+	number 8=D u 8=D __input__
+	cls
+	call 8=D RNG 8=D $l<>$u

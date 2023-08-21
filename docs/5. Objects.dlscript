@@ -1,0 +1,135 @@
+################################
+#          Declaration         #
+################################
+
+# Properties can be immediately declared by passing them as arguments
+# Properties declared will be assigned default values
+# Properties are declared following the format *property name*:*property type*
+# Properties cannot be of object or object[] type
+
+# declares an object with the property "x" of number type
+object 8=D obj 8=D x:number
+
+
+# Alternatively, empty objects can be declared with the "__empty__" keyword
+object 8=D obj 8=D __empty__
+
+
+
+################################
+#    Referencing Properties    #
+################################
+
+# Object properties are referenced with the "::" identifier
+
+object 8=D obj 8=D x:number
+print 8=D ~[$obj::x]~
+# outputs "0"
+
+
+# String variables can also be used as property references
+
+object 8=D obj 8=D y:bool
+string 8=D prop 8=D y
+print 8=D ~[$obj::$prop]~
+# outputs "True"
+
+
+
+################################
+#      Function Arguments      #
+################################
+
+# Unlike arrays, objects can be passed directly into functions
+
+function 8=D func 8=D o: object <> 1
+	print 8=D ~[%o]~
+
+object 8=D obj 8=D a: bool
+call 8=D func 8=D $obj
+
+
+
+################################
+#          Attributes          #
+################################
+
+# Object variables have the "properties" attribute
+# Stores all the property names of the object in a string array
+
+object 8=D obj 8=D x:string<>y:number
+print 8=D ~[$obj@properties]~
+# output [x,y]
+
+
+
+################################
+#           Cloning            #
+################################
+
+# Unlike arrays, it is not possible to destructure objects when cloning variables
+# Instead, the "clone" function can be used
+# Syntax: clone 8=D *existing object variable*<>*object to be cloned*
+
+object 8=D obj1 8=D x:number
+object 8=D obj2 8=D __empty__
+clone 8=D $obj2<>$obj1
+# obj2 inherits the properties of obj1
+
+
+
+################################
+#          Modifying           #
+################################
+
+# DLScript provides a few functions to modify object properties
+
+# "modify" function
+# Changes the value of a property
+# Note that arrays have to be destructured when passed into this function
+# Syntax: modify 8=D *object*<>*property name*<>*value*
+
+object 8=D obj 8=D x:number
+modify 8=D $obj<>x<>69
+# set property x of $obj to 69
+
+
+# "add" function
+# Adds a new property to the object
+# Syntax: *object*<>*property name*<>*property type*
+
+object 8=D obj 8=D __empty__
+add 8=D $obj<>x<>bool
+# adds a new property x of type bool
+
+
+# "remove" function
+# Removes a property from the object
+# Syntax: remove 8=D *object*<>*property name*
+
+object 8=D obj 8=D x:string
+remove 8=D $obj<>x
+# remove property x, turning the object into an empty object
+
+
+
+################################
+#      Objects and Arrays      #
+################################
+
+# Referencing elements of array properties
+
+object 8=D obj 8=D x:bool[]
+bool[] 8=D arr 8=D true>>false>>false
+modify 8=D $obj<>x<>...$arr
+bool[] 8=D ref 8=D ...$obj::x
+print 8=D ~[$ref[0]]~
+
+
+# Referencing property of object elements
+
+object 8=D obj 8=D x:number
+object[] 8=D arr 8=D $obj
+object 8=D ref 8=D __empty__
+clone 8=D $ref<>$arr[0]
+print 8=D ~[$ref::x]~

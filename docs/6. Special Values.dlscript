@@ -1,0 +1,27 @@
+################################
+#    Mathematical Constants    #
+################################
+
+# DLScript provides a few mathematical constants that can be used in expressions
+# Note that their values are rounded to 10 decimal places
+
+# __pi__
+# Holds the value of the mathematical constant pi (3.141529...)
+
+
+# __phi__
+# Holds the value of the golden ratio (1.6180...)
+
+
+# __e__
+# Holds the value of the mathematical constant e (2.718281...)
+
+
+
+################################
+#        Random Numbers        #
+################################
+
+# DLScript also provides a special value for generating random numbers
+# The __rnd__ keyword generates random doubles of 10 decimal places
+# For generating random integers within a range, refer to (https://github.com/WAP-Industries/DLScript/blob/main/examples/RNG.dlscript)
