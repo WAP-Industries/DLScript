@@ -334,41 +334,70 @@ class Keywords : DickLang.Compiler {
         {
             "round", new Keyword(
                 new TokenInfo(new string[]{"keyword", "args" }, new string[]{"string", "number"}),
-                (parameters) => {
-                    var res = Deserialize<object[]>(Serialize(Keywords.GetVariable(Convert.ToString(parameters[0]), "number")));
-                    if (res == null) return null;
-                    (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
-
-                    if (!Int32.TryParse(Convert.ToString(parameters[1]), out int _))
-                        return Convert.ToBoolean(Error.RunTimeError("Type", "Number of decimal places must be an integer"));
-
-                    var variable = Deserialize<Dictionary<string, object>>(Serialize(ConvertCollection(_Coll)[name]));
-                    if (Convert.ToString(variable["Type"])!="number")
-                        return Convert.ToBoolean(Error.RunTimeError("Type", $"Cannot round {rawname} of non-number type"));
-
-                    var value = Math.Round(Convert.ToDecimal(GetJsonValue((JsonElement) variable["Value"])),
-                                            Convert.ToInt32(Convert.ToString(parameters[1])));
-
-                    var tempdic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(rawname[0] == '$' ? Variables :
-                    Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"]));
-                    tempdic[name] = new Dictionary<string, object>(){
-                        { "Type", variable["Type"] },
-                        { "ArrayType", variable["ArrayType"] },
-                        { "Properties", variable["Properties"] },
-                        { "Value",  value},
-                        { "Attributes", SetAttribute(value, Convert.ToString(variable["Type"])) }
-                    };
-
-                    if (rawname[0]=='$')
-                        Keywords.Variables = tempdic;
-                    else
-                        Keywords.Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"] = tempdic;
-
-                    return true;
-                }
+                (parameters) => Convert.ToBoolean(TransformNumber(Convert.ToString(parameters[0]), Convert.ToString(parameters[1]), "round"))
             )
-        }
+        },
+        {
+            "floor", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args" }, new string[]{"string"}),
+                (parameters) => Convert.ToBoolean(TransformNumber(Convert.ToString(parameters[0]), null, "floor"))
+            )
+        },
+        {
+            "ceil", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args" }, new string[]{"string"}),
+                (parameters) => Convert.ToBoolean(TransformNumber(Convert.ToString(parameters[0]), null, "ceil"))
+            )
+        },
     };
+
+    private static object TransformNumber(string VarName, string? DP, string mode) {
+        // getting variable info
+        var res = Deserialize<object[]>(Serialize(GetVariable(VarName, "number")));
+        if (res == null) return null;
+        (string rawname, string name, object _Coll) = (Convert.ToString(res[0]), Convert.ToString(res[1]), res[2]);
+
+        // checking for error
+        if (mode=="round" && !Int32.TryParse(DP, out int _))
+            return Convert.ToBoolean(Error.RunTimeError("Type", "Number of decimal places must be an integer"));
+
+        var variable = Deserialize<Dictionary<string, object>>(Serialize(ConvertCollection(_Coll)[name]));
+        if (Convert.ToString(variable["Type"]) != "number")
+            return Convert.ToBoolean(Error.RunTimeError("Type", $"Cannot apply {mode} to {rawname} of non-number type"));
+
+        decimal value = Convert.ToDecimal(GetJsonValue((JsonElement)variable["Value"]));
+
+        switch (mode) {
+            case "round":
+                value = Math.Round(value, Convert.ToInt32(DP));
+                break;
+            case "floor":
+                value = Math.Floor(value);
+                break;
+            case "ceil":
+                value = Math.Ceiling(value);
+                break;
+        }
+
+        var tempdic = Deserialize<Dictionary<string, Dictionary<string, object>>>(Serialize(rawname[0] == '$' ? Variables :
+        Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"]));
+        tempdic[name] = new Dictionary<string, object>(){
+            { "Type", variable["Type"] },
+            { "ArrayType", variable["ArrayType"] },
+            { "Properties", variable["Properties"] },
+            { "Value",  value},
+            { "Attributes", SetAttribute(value, Convert.ToString(variable["Type"])) }
+        };
+
+        if (rawname[0] == '$')
+            Keywords.Variables = tempdic;
+        else
+            Keywords.Methods[Convert.ToString(FunctionInfo["Name"])]["Arguments"] = tempdic;
+
+        return true;
+    }
+
+
 
     // getting json element primitive type
     private static object GetJsonValue(JsonElement element) {
