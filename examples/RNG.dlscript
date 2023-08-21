@@ -5,7 +5,7 @@ function 8=D RNG 8=D lbound: number <> ubound: number <> 6
 		print 8=D Invalid range\n
 		return
 	number 8=D num 8=D __rnd__*%ubound+%lbound
-	round 8=D $num<>0
+	floor 8=D $num
 	print 8=D Random number between ~[%lbound]~ and ~[%ubound]~: ~[$num]~\n
 
 
