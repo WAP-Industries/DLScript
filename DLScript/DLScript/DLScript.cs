@@ -131,7 +131,7 @@ namespace DickLang {
 
                 Process process = new Process();
                 process.StartInfo = new ProcessStartInfo {
-                    FileName = $@"{CurrDir}\checkext.bat",
+                    FileName = $@"{CurrDir}\setup\checkext.bat",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true
@@ -156,7 +156,7 @@ namespace DickLang {
 
                     Process.Start(
                         new ProcessStartInfo {
-                            FileName = @$"{CurrDir}\assoc.bat",
+                            FileName = @$"{CurrDir}\setup\assoc.bat",
                             Verb = "runas",
                             UseShellExecute = true
                         }
