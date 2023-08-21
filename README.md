@@ -1,5 +1,3 @@
-# DLScript
-
 <img src="https://github.com/WAP-Industries/DLScript/blob/main/lang.png?raw=true" width=200 height=200/><img src="https://github.com/WAP-Industries/DLScript/blob/main/interpreter.png?raw=true" width=200 height=200/>
 
 
