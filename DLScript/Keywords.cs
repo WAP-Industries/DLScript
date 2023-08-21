@@ -66,6 +66,15 @@ class Keywords : DickLang.Compiler {
             )
         },
         {
+            "println", new Keyword(
+                new TokenInfo(new string[]{"keyword", "args"}, new string[]{"string"}),
+                (parameters)=> {
+                    Console.WriteLine(parameters[0]);
+                    return true;
+                }
+            )
+        },
+        {
             "cls", new Keyword(
                 new TokenInfo(new string[]{"keyword"}),
                 (parameters) => {
