@@ -9,14 +9,14 @@ function 8=D PrintFibo 8=D n: number <> 16
 	number 8=D z 8=D $x+$y
 	
 	if 8=D %n==0 <> 2
-		print 8=D ~[$msg]~~[$x]~\n
+		println 8=D ~[$msg]~~[$x]~
 		return
 	while 8=D $i<%n-1 <> 4
 		number 8=D z 8=D $x+$y
 		number 8=D x 8=D $y
 		number 8=D y 8=D $z
 		number 8=D i 8=D $i+1
-	print 8=D ~[$msg]~~[$z]~\n
+	println 8=D ~[$msg]~~[$z]~
 
 
 number 8=D iter 8=D 1

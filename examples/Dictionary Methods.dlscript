@@ -1,0 +1,37 @@
+# dlscript equivalents of javascript dictionary methods
+
+function 8=D HasProperty 8=D obj: object <> property: string <> 11
+    string[] 8=D props 8=D ~[...%obj@properties]~
+    number 8=D num 8=D 1
+    number 8=D i 8=D 0
+    while 8=D $i<$props@length <> 3
+        if 8=D $props[$i]==%property <> 1
+            cast 8=D num<>bool
+        number 8=D i 8=D $i+1
+    if 8=D $num@type==number <> 2
+        println 8=D false
+        return
+    println 8=D true
+
+function 8=D IsEmpty 8=D obj: object <> 5
+    string[] 8=D props 8=D ~[...%obj@properties]~
+    if 8=D $props@length==0 <> 2
+        println 8=D true
+        return
+    println 8=D false
+
+function 8=D Values 8=D obj:object <> 8
+    string[] 8=D props 8=D ~[...%obj@properties]~
+    string[] 8=D values 8=D __empty__
+    number 8=D i 8=D 0
+    while 8=D $i<$props@length <> 3
+        string 8=D prop 8=D ~[$props[$i]]~
+        append 8=D $values <> ~[%obj::$prop]~
+        number 8=D i 8=D $i+1
+    println 8=D ~[$values]~
+
+
+object 8=D obj 8=D x:number<>y:bool
+call 8=D HasProperty 8=D $obj<>x
+call 8=D IsEmpty 8=D $obj
+call 8=D Values 8=D $obj

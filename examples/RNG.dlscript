@@ -2,11 +2,11 @@
 
 function 8=D RNG 8=D lbound: number <> ubound: number <> 6
 	if 8=D %lbound>%ubound <> 2
-		print 8=D Invalid range\n
+		println 8=D Invalid range
 		return
 	number 8=D num 8=D __rnd__*%ubound+%lbound
 	floor 8=D $num
-	print 8=D Random number between ~[%lbound]~ and ~[%ubound]~: ~[$num]~\n
+	println 8=D Random number between ~[%lbound]~ and ~[%ubound]~: ~[$num]~
 
 
 while 8=D true <> 7

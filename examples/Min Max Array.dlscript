@@ -10,7 +10,7 @@ function 8=D Min 8=D array: number[] <> 10
         if 8=D %array[$i]<$res <> 1
             number 8=D res 8=D %array[$i]
         number 8=D i 8=D $i+1
-    print 8=D Smallest value: ~[$res]~\n
+    println 8=D Smallest value: ~[$res]~
 
 function 8=D Max 8=D array: number[] <> 10
     bool 8=D res 8=D true
@@ -22,7 +22,7 @@ function 8=D Max 8=D array: number[] <> 10
         if 8=D %array[$i]>$res <> 1
             number 8=D res 8=D %array[$i]
         number 8=D i 8=D $i+1
-    print 8=D Largest value: ~[$res]~\n
+    println 8=D Largest value: ~[$res]~
 
 
 number[] 8=D arr 8=D __empty__
@@ -35,6 +35,6 @@ while 8=D $i<10 <> 4
     append 8=D $arr<>$rand
     number 8=D i 8=D $i+1
 
-print 8=D Array: ~[$arr]~\n
+println 8=D Array: ~[$arr]~
 call 8=D Min 8=D ...$arr
 call 8=D Max 8=D ...$arr
