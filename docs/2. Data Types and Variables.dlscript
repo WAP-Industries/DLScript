@@ -91,6 +91,40 @@ cast 8=D numarray<>bool[]
 
 
 ################################
+#    Number Transformations    #
+################################
+
+# There are a few functions to apply transformations to number values
+
+# "round" function
+# Rounds the number to the given decimal places
+# Syntax: round 8=D *number*<>*decimal places*
+
+number 8=D num 8=D __pi__
+round 8=D $num<>5
+# rounds variable holding pi to 5 decimal places
+
+
+# "floor" function
+# Rounds the number down to the nearest integer
+# Syntax: floor 8=D *number*
+
+number 8=D num 8=D __pi__
+floor 8=D $num
+# rounds variable down to 3
+
+
+# "ceil" function
+# Rounds the number up to the nearest integer
+# Syntax: ceil 8=D *number*
+
+number 8=D num 8=D __pi__
+ceil 8=D $num
+# rounds variable up to 4
+
+
+
+################################
 #      Variable Attributes     #
 ################################
 
@@ -101,6 +135,6 @@ cast 8=D numarray<>bool[]
 # "type" attribute
 # this stores the data type of a variable as a string
 
-string [] 8=D strarray 8=D __empty__
+string[] 8=D strarray 8=D __empty__
 print 8=D ~[$strarray@type]~
 # outputs "string[]"
