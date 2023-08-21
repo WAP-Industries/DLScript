@@ -67,3 +67,18 @@ sleep 8=D 0.5
 # "abort" function
 # Completely stops and exits the current program
 # Syntax: abort
+
+
+
+################################
+#            Output            #
+################################
+
+# "print" function
+# prints a string without a linebreak
+# Syntax: print 8=D *string*
+
+
+# "println" function
+# prints a string with a linebreak
+# Syntax: println 8=D *string*

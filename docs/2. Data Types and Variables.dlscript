@@ -46,6 +46,11 @@ string 8=D str 8=D Hello World!
 number 8=D num 8=D (2+2)-1
 
 
+# Variables can also be used to store user input with the "__input__" keyword
+# Note that if the input type and variable type don't match, an error will be thrown
+number 8=D num 8=D __input__
+
+
 # Variables are referenced with the "$" prefix
 
 # declare variable "num" with value "69"
