@@ -13,4 +13,4 @@
 1. Download and extract the zip file
 2. Install the dependencies
 3. Run the build.bat file
-4. Start the DLScript.exe application to run code
+4. Start the Dev DLS.exe application located in the bin\Release directory to start running code
