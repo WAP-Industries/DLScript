@@ -1,7 +1,5 @@
-﻿using System;
-using static System.Console;
+﻿using static System.Console;
 using System.Diagnostics;
-using System.Runtime.ExceptionServices;
 using System.Reflection;
 
 namespace DickLang {

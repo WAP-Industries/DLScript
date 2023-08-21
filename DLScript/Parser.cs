@@ -1,9 +1,5 @@
-﻿using DickLang;
-using static DickLang.Compiler;
-using static System.Text.Json.JsonSerializer;
+﻿using static System.Text.Json.JsonSerializer;
 using System.Text.RegularExpressions;
-using System.Collections;
-using System.Collections.Generic;
 
 class Parser : DickLang.Compiler {
     private static readonly string[][] Patterns = new string[][]

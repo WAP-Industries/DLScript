@@ -1,8 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using static DickLang.Compiler;
-using static System.Text.Json.JsonSerializer;
-
-class Interpreter : DickLang.Compiler {
+﻿class Interpreter : DickLang.Compiler {
     private static object[] GetArgs(string[] Tokens, string ArgString) {
         string[] Args = Parser.SplitArgs(ArgString);
         string[] ArgsList = (Keywords.DataTypes.Contains(Tokens[0]) ? new string[] { Tokens[0] } : Keywords.Functions[Tokens[0]].Info.Args);
