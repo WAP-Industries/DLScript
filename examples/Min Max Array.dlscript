@@ -34,7 +34,7 @@ while 8=D $i<10 <> 4
     floor 8=D $rand
     append 8=D $arr<>$rand
     number 8=D i 8=D $i+1
-print 8=D Array: ~[$arr]~\n
 
+print 8=D Array: ~[$arr]~\n
 call 8=D Min 8=D ...$arr
 call 8=D Max 8=D ...$arr
