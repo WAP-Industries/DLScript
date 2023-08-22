@@ -1,11 +1,12 @@
 # a program that generates random numbers between a user-inputed range
 
-function 8=D RNG 8=D lbound: number <> ubound: number <> 6
+function 8=D RNG 8=D lbound: number <> ubound: number <> 7
 	if 8=D %lbound>%ubound <> 2
 		println 8=D Invalid range
 		return
-	number 8=D num 8=D __rnd__*%ubound+%lbound
+	number 8=D num 8=D __rnd__*(%ubound-%lbound+1)
 	floor 8=D $num
+	number 8=D num 8=D $num+%lbound
 	println 8=D Random number between ~[%lbound]~ and ~[%ubound]~: ~[$num]~
 
 
